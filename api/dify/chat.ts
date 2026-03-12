@@ -24,7 +24,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const apiKey = process.env.DIFY_API_KEY || "";
-  const difyTarget = (process.env.DIFY_TARGET || "https://dify2.nrct.ai.in.th").replace(/\/+$/, "");
+  const rawDifyTarget = process.env.DIFY_BASE_URL || process.env.DIFY_TARGET || "https://dify2.nrct.ai.in.th";
+  const difyTarget = rawDifyTarget.replace(/\/+$/, "");
+  const difyApiBase = /\/v1$/i.test(difyTarget) ? difyTarget : `${difyTarget}/v1`;
 
   if (!apiKey) {
     res.status(500).json({ error: "Missing DIFY_API_KEY on server" });
@@ -57,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const response = await fetch(`${difyTarget}/v1/chat-messages`, {
+    const response = await fetch(`${difyApiBase}/chat-messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -71,6 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok) {
       res.status(response.status).json({
         error: "Dify API call failed",
+        endpoint: `${difyApiBase}/chat-messages`,
         details: data,
       });
       return;
@@ -80,6 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     res.status(500).json({
       error: "Dify proxy failed",
+      endpoint: `${difyApiBase}/chat-messages`,
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }
