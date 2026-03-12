@@ -17,21 +17,12 @@ export interface DifyResponse {
     answer: string;
 }
 
-export const getDifyChatResponse = async (
-    query: string,
-    inputs: Record<string, unknown> = {},
-    user: string = "test-user-1"
-) => {
+export const getDifyChatResponse = async (query: string) => {
     try {
-        const workflowInputs: Record<string, unknown> = { ...inputs };
-        if (workflowInputs.user_input === undefined) {
-            workflowInputs.user_input = query;
-        }
-
         const payload: Record<string, unknown> = {
-            inputs: workflowInputs,
+            inputs: { user_input: query },
             response_mode: "blocking",
-            user,
+            user: "test-user-1",
         };
 
         const response = await fetch(DIFY_CHAT_ENDPOINT, {

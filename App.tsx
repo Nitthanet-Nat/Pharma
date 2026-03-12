@@ -39,7 +39,7 @@ const App: React.FC = () => {
     setInput('');
     setIsTyping(true);
     try {
-      const result = await getDifyChatResponse(input, {});
+      const result = await getDifyChatResponse(input);
       const answerContent = result?.answer || 'Sorry, the assistant cannot respond right now.';
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -79,7 +79,7 @@ const App: React.FC = () => {
       };
       setMessages(prev => [...prev, userMessage]);
       try {
-        const result = await getDifyChatResponse('I uploaded a medicine image. Please help analyze it.', {});
+        const result = await getDifyChatResponse('I uploaded a medicine image. Please help analyze it.');
         const analysis = result?.answer || 'Sorry, unable to analyze this information right now.';
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -264,4 +264,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
