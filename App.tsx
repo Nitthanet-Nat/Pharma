@@ -17,7 +17,6 @@ const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'meds' | 'stats'>('chat');
-  const [conversationId, setConversationId] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,11 +39,8 @@ const App: React.FC = () => {
     setInput('');
     setIsTyping(true);
     try {
-      const result = await getDifyChatResponse(input, conversationId, {});
+      const result = await getDifyChatResponse(input, {});
       const answerContent = result?.answer || 'Sorry, the assistant cannot respond right now.';
-      if (result?.conversation_id) {
-        setConversationId(result.conversation_id);
-      }
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -83,11 +79,8 @@ const App: React.FC = () => {
       };
       setMessages(prev => [...prev, userMessage]);
       try {
-        const result = await getDifyChatResponse('I uploaded a medicine image. Please help analyze it.', conversationId, {});
+        const result = await getDifyChatResponse('I uploaded a medicine image. Please help analyze it.', {});
         const analysis = result?.answer || 'Sorry, unable to analyze this information right now.';
-        if (result?.conversation_id) {
-          setConversationId(result.conversation_id);
-        }
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -271,5 +264,4 @@ const App: React.FC = () => {
 };
 
 export default App;
-
 

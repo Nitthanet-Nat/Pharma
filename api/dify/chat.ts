@@ -1,6 +1,5 @@
 type ChatRequestBody = {
   query?: string;
-  conversationId?: string;
   inputs?: Record<string, unknown>;
   user?: string;
 };
@@ -41,25 +40,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
   const query = rawBody?.query?.toString().trim();
+  const workflowInputs: Record<string, unknown> = { ...(rawBody?.inputs ?? {}) };
+  if (query) {
+    // Keep compatibility with common workflow variable names.
+    if (workflowInputs.query === undefined) workflowInputs.query = query;
+    if (workflowInputs.user_query === undefined) workflowInputs.user_query = query;
+    if (workflowInputs.message === undefined) workflowInputs.message = query;
+  }
 
-  if (!query) {
-    res.status(400).json({ error: "query is required" });
+  if (Object.keys(workflowInputs).length === 0) {
+    res.status(400).json({ error: "inputs or query is required" });
     return;
   }
 
   const payload: Record<string, unknown> = {
-    inputs: rawBody?.inputs ?? {},
-    query,
+    inputs: workflowInputs,
     response_mode: "blocking",
     user: rawBody?.user || "web-client-user",
   };
 
-  if (rawBody?.conversationId) {
-    payload.conversation_id = rawBody.conversationId;
-  }
-
   try {
-    const response = await fetch(`${difyApiBase}/chat-messages`, {
+    const response = await fetch(`${difyApiBase}/workflows/run`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -73,17 +74,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok) {
       res.status(response.status).json({
         error: "Dify API call failed",
-        endpoint: `${difyApiBase}/chat-messages`,
+        endpoint: `${difyApiBase}/workflows/run`,
         details: data,
       });
       return;
     }
 
-    res.status(200).json(data);
+    const outputs = (data as { data?: { outputs?: Record<string, unknown> } })?.data?.outputs || {};
+    const answer =
+      (outputs.answer as string) ||
+      (outputs.text as string) ||
+      (outputs.result as string) ||
+      (outputs.output as string) ||
+      "";
+
+    res.status(200).json({
+      ...data,
+      answer,
+      outputs,
+    });
   } catch (error) {
     res.status(500).json({
       error: "Dify proxy failed",
-      endpoint: `${difyApiBase}/chat-messages`,
+      endpoint: `${difyApiBase}/workflows/run`,
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }

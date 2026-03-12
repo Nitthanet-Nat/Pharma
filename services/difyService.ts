@@ -4,18 +4,21 @@
 const DIFY_CHAT_ENDPOINT = import.meta.env.VITE_DIFY_BASE_URL || "/api/dify/chat";
 
 export interface DifyResponse {
-    event: string;
-    message_id: string;
-    conversation_id: string;
-    mode: string;
+    workflow_run_id?: string;
+    task_id?: string;
+    data?: {
+        status?: string;
+        outputs?: Record<string, unknown>;
+        error?: string | null;
+        elapsed_time?: number;
+        total_tokens?: number;
+        total_steps?: number;
+    };
     answer: string;
-    metadata: any;
-    created_at: number;
 }
 
 export const getDifyChatResponse = async (
     query: string,
-    conversationId: string = "",
     inputs: Record<string, unknown> = {},
     user: string = "web-client-user"
 ) => {
@@ -23,13 +26,8 @@ export const getDifyChatResponse = async (
         const payload: Record<string, unknown> = {
             inputs,
             query,
-            response_mode: "blocking",
             user,
         };
-
-        if (conversationId) {
-            payload.conversation_id = conversationId;
-        }
 
         const response = await fetch(DIFY_CHAT_ENDPOINT, {
             method: "POST",
