@@ -20,7 +20,7 @@ export interface DifyResponse {
 export const getDifyChatResponse = async (
     query: string,
     inputs: Record<string, unknown> = {},
-    user: string = "web-client-user"
+    user: string = "test-user-1"
 ) => {
     try {
         const workflowInputs: Record<string, unknown> = { ...inputs };
