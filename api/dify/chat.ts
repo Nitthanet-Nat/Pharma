@@ -26,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawDifyTarget = process.env.DIFY_BASE_URL || process.env.DIFY_TARGET || "https://dify2.nrct.ai.in.th/v1";
   const difyTarget = rawDifyTarget.replace(/\/+$/, "");
   const difyApiBase = /\/v1$/i.test(difyTarget) ? difyTarget : `${difyTarget}/v1`;
+  const queryInputKey = (process.env.DIFY_QUERY_INPUT_KEY || "query").trim() || "query";
 
   if (!apiKey) {
     res.status(500).json({ error: "Missing DIFY_API_KEY on server" });
@@ -42,10 +43,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const query = rawBody?.query?.toString().trim();
   const workflowInputs: Record<string, unknown> = { ...(rawBody?.inputs ?? {}) };
   if (query) {
-    // Keep compatibility with common workflow variable names.
-    if (workflowInputs.query === undefined) workflowInputs.query = query;
-    if (workflowInputs.user_query === undefined) workflowInputs.user_query = query;
-    if (workflowInputs.message === undefined) workflowInputs.message = query;
+    // Map frontend chat text into the workflow input variable configured on server.
+    if (workflowInputs[queryInputKey] === undefined) workflowInputs[queryInputKey] = query;
   }
 
   if (Object.keys(workflowInputs).length === 0) {
