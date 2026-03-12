@@ -1,1 +1,15 @@
-/* Keep this file to satisfy the static stylesheet link in index.html. */
+@import "tailwindcss";
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background-color: #f8fafc;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
