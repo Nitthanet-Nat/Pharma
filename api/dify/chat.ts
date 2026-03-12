@@ -1,6 +1,7 @@
 type ChatRequestBody = {
   query?: string;
   inputs?: Record<string, unknown>;
+  response_mode?: "blocking" | "streaming";
   user?: string;
 };
 
@@ -54,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const payload: Record<string, unknown> = {
     inputs: workflowInputs,
-    response_mode: "blocking",
+    response_mode: rawBody?.response_mode || "blocking",
     user: rawBody?.user || "web-client-user",
   };
 

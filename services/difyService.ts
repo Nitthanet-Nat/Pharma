@@ -23,9 +23,14 @@ export const getDifyChatResponse = async (
     user: string = "web-client-user"
 ) => {
     try {
+        const workflowInputs: Record<string, unknown> = { ...inputs };
+        if (workflowInputs.user_input === undefined) {
+            workflowInputs.user_input = query;
+        }
+
         const payload: Record<string, unknown> = {
-            inputs,
-            query,
+            inputs: workflowInputs,
+            response_mode: "blocking",
             user,
         };
 
