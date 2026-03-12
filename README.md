@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PharmaAI (Vite + React)
 
 คู่มือสำหรับรันโปรเจกต์ในเครื่อง และ deploy ขึ้น GitHub + Vercel แบบปลอดภัย (เหมาะกับ public repo)
@@ -62,3 +63,7 @@
 - `git status`
 - `git ls-files | findstr /I ".env"`
 - `rg -n "app-|API_KEY|Bearer " --glob "!node_modules/**" --glob "!dist/**"`
+=======
+# Pharma
+for testing
+>>>>>>> 93a13a3b7985a0b394bab73156dff7a940d22880
