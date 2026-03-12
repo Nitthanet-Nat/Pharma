@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const apiKey = process.env.DIFY_API_KEY || "";
-  const rawDifyTarget = process.env.DIFY_BASE_URL || process.env.DIFY_TARGET || "https://dify2.nrct.ai.in.th/v1";
+  const rawDifyTarget = process.env.DIFY_BASE_URL || "https://dify2.nrct.ai.in.th/v1";
   const difyTarget = rawDifyTarget.replace(/\/+$/, "");
   const difyApiBase = /\/v1$/i.test(difyTarget) ? difyTarget : `${difyTarget}/v1`;
   const queryInputKey = (process.env.DIFY_QUERY_INPUT_KEY || "query").trim() || "query";
@@ -72,9 +72,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      let appInfo: { mode?: string } | null = null;
+      if ((data as { code?: string } | null)?.code === "not_chat_app") {
+        const infoResp = await fetch(`${difyApiBase}/info`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        }).catch(() => null);
+        appInfo = (await infoResp?.json().catch(() => null)) as { mode?: string } | null;
+      }
+
       res.status(response.status).json({
         error: "Dify API call failed",
         endpoint: `${difyApiBase}/workflows/run`,
+        diagnostics: {
+          hasDifyBaseUrl: Boolean(process.env.DIFY_BASE_URL),
+          queryInputKey,
+          appMode: appInfo?.mode ?? null,
+        },
         details: data,
       });
       return;
