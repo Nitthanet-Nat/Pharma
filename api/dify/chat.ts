@@ -26,6 +26,15 @@ type DifyCallResult = {
   mode: DifyMode;
 };
 
+type DifyParameterField = {
+  variable?: unknown;
+  required?: unknown;
+};
+
+type DifyParametersResponse = {
+  user_input_form?: Array<Record<string, DifyParameterField>>;
+};
+
 function normalizeDifyMode(modeValue?: string | null): DifyMode | null {
   const mode = (modeValue || "").trim().toLowerCase();
   if (!mode) return null;
@@ -65,6 +74,28 @@ function extractAnswer(data: unknown): { answer: string; outputs: Record<string,
   return { answer, outputs };
 }
 
+function extractWorkflowInputVariables(parameters: unknown): string[] {
+  if (!parameters || typeof parameters !== "object") return [];
+  const response = parameters as DifyParametersResponse;
+  if (!Array.isArray(response.user_input_form)) return [];
+
+  const requiredVariables: string[] = [];
+  const optionalVariables: string[] = [];
+
+  for (const item of response.user_input_form) {
+    if (!item || typeof item !== "object") continue;
+    for (const config of Object.values(item)) {
+      if (!config || typeof config !== "object") continue;
+      const variable = typeof config.variable === "string" ? config.variable.trim() : "";
+      if (!variable) continue;
+      if (Boolean(config.required)) requiredVariables.push(variable);
+      else optionalVariables.push(variable);
+    }
+  }
+
+  return Array.from(new Set([...requiredVariables, ...optionalVariables]));
+}
+
 async function callDifyEndpoint(
   difyApiBase: string,
   apiKey: string,
@@ -95,7 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawDifyTarget = process.env.DIFY_BASE_URL || process.env.DIFY_TARGET || "https://dify2.nrct.ai.in.th/v1";
   const difyTarget = rawDifyTarget.replace(/\/+$/, "");
   const difyApiBase = /\/v1$/i.test(difyTarget) ? difyTarget : `${difyTarget}/v1`;
-  const queryInputKey = (process.env.DIFY_QUERY_INPUT_KEY || "query").trim() || "query";
+  const configuredQueryInputKey = (process.env.DIFY_QUERY_INPUT_KEY || "").trim();
   const configuredMode = normalizeDifyMode(process.env.DIFY_APP_MODE || "workflow");
 
   if (!apiKey) {
@@ -112,15 +143,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   let query = rawBody?.query?.toString().trim() || "";
   const workflowInputs: Record<string, unknown> = { ...(rawBody?.inputs ?? {}) };
-  if (!query) {
-    const mappedInput = workflowInputs[queryInputKey];
+  if (!query && configuredQueryInputKey) {
+    const mappedInput = workflowInputs[configuredQueryInputKey];
     if (typeof mappedInput === "string") {
       query = mappedInput.trim();
     }
   }
-  if (query) {
-    // Keep `query` and mapped input in sync so both chat/workflow routes can be used.
-    if (workflowInputs[queryInputKey] === undefined) workflowInputs[queryInputKey] = query;
+  if (!query) {
+    const firstTextInput = Object.values(workflowInputs).find(
+      (value) => typeof value === "string" && value.trim().length > 0
+    );
+    if (typeof firstTextInput === "string") {
+      query = firstTextInput.trim();
+    }
   }
 
   if (!query && Object.keys(workflowInputs).length === 0) {
@@ -132,6 +167,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const user = rawBody?.user || "web-client-user";
 
   try {
+    let detectedWorkflowInputKeys: string[] = [];
+    if (!configuredQueryInputKey || !query || Object.keys(workflowInputs).length === 0) {
+      const parametersResp = await fetch(`${difyApiBase}/parameters`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }).catch(() => null);
+      const parametersData = await parametersResp?.json().catch(() => null);
+      detectedWorkflowInputKeys = extractWorkflowInputVariables(parametersData);
+    }
+
+    const candidateInputKeys = Array.from(
+      new Set([configuredQueryInputKey, ...detectedWorkflowInputKeys, "user_input", "query"].filter(Boolean))
+    );
+    const resolvedQueryInputKey = candidateInputKeys[0] || "query";
+
+    if (query) {
+      // Mirror incoming `query` into likely workflow input keys to tolerate env mismatch on deploy.
+      for (const key of candidateInputKeys) {
+        if (workflowInputs[key] === undefined) workflowInputs[key] = query;
+      }
+    } else {
+      for (const key of candidateInputKeys) {
+        const value = workflowInputs[key];
+        if (typeof value === "string" && value.trim()) {
+          query = value.trim();
+          break;
+        }
+      }
+    }
+
     let detectedMode: DifyMode | null = null;
     if (!configuredMode) {
       const infoResp = await fetch(`${difyApiBase}/info`, {
@@ -192,7 +256,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         diagnostics: {
           hasDifyBaseUrl: Boolean(process.env.DIFY_BASE_URL),
           hasDifyTarget: Boolean(process.env.DIFY_TARGET),
-          queryInputKey,
+          configuredQueryInputKey,
+          resolvedQueryInputKey,
+          detectedWorkflowInputKeys,
           configuredMode,
           detectedMode,
           attemptedMode: callResult.mode,
