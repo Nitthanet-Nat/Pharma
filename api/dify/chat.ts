@@ -64,13 +64,14 @@ function extractAnswer(data: unknown): { answer: string; outputs: Record<string,
     data?: { outputs?: Record<string, unknown> };
   };
   const outputs = payload?.data?.outputs || {};
-  const answer =
+  const rawAnswer =
     (typeof payload?.answer === "string" && payload.answer) ||
     (typeof outputs.answer === "string" && outputs.answer) ||
     (typeof outputs.text === "string" && outputs.text) ||
     (typeof outputs.result === "string" && outputs.result) ||
     (typeof outputs.output === "string" && outputs.output) ||
     "";
+  const answer = rawAnswer.replace(/<think>[\s\S]*?<\/think>\s*/gi, "").trim();
   return { answer, outputs };
 }
 
@@ -158,14 +159,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       query = mappedInput.trim();
     }
   }
-  if (!query) {
-    const firstTextInput = Object.values(workflowInputs).find(
-      (value) => typeof value === "string" && value.trim().length > 0
-    );
-    if (typeof firstTextInput === "string") {
-      query = firstTextInput.trim();
-    }
-  }
 
   if (!query && Object.keys(workflowInputs).length === 0) {
     res.status(400).json({ error: "query or inputs is required" });
@@ -185,21 +178,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       detectedWorkflowInputKeys = extractWorkflowInputVariables(parametersData);
     }
 
-    const preferredInputKeys = Array.from(new Set([configuredQueryInputKey, ...detectedWorkflowInputKeys].filter(Boolean)));
-    let resolvedQueryInputKey = preferredInputKeys[0] || "";
-    if (!resolvedQueryInputKey) {
-      resolvedQueryInputKey =
-        Object.keys(workflowInputs).find((key) => typeof workflowInputs[key] === "string" && workflowInputs[key]) || "";
+    const candidateInputKeys = Array.from(
+      new Set([configuredQueryInputKey, ...detectedWorkflowInputKeys, "user_input", "query"].filter(Boolean))
+    );
+    let resolvedQueryInputKey = "";
+    for (const key of candidateInputKeys) {
+      const value = workflowInputs[key];
+      if (typeof value === "string" && value.trim()) {
+        resolvedQueryInputKey = key;
+        if (!query) query = value.trim();
+        break;
+      }
     }
-    if (!resolvedQueryInputKey) resolvedQueryInputKey = "query";
+    if (!resolvedQueryInputKey && query) {
+      resolvedQueryInputKey = candidateInputKeys[0] || "query";
+    }
 
     if (query) {
       if (workflowInputs[resolvedQueryInputKey] === undefined) workflowInputs[resolvedQueryInputKey] = query;
-    } else {
-      const value = workflowInputs[resolvedQueryInputKey];
-      if (typeof value === "string" && value.trim()) {
-        query = value.trim();
-      }
     }
 
     let detectedMode: DifyMode | null = null;
@@ -244,8 +240,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let callResult = await callDifyEndpoint(difyApiBase, apiKey, preferredMode, firstPayload);
     if (!callResult.response.ok && callResult.mode === "workflow" && query) {
-      const requiredInputKey = extractRequiredInputKeyFromError(callResult.data);
-      if (requiredInputKey && workflowInputs[requiredInputKey] === undefined) {
+      const requiredInputKey = extractRequiredInputKeyFromError(callResult.data) || detectedWorkflowInputKeys[0] || "";
+      const currentValue = requiredInputKey ? workflowInputs[requiredInputKey] : undefined;
+      const shouldFillRequiredKey =
+        Boolean(requiredInputKey) &&
+        (typeof currentValue !== "string" || currentValue.trim().length === 0);
+      if (requiredInputKey && shouldFillRequiredKey) {
         const retryInputs = { ...workflowInputs, [requiredInputKey]: query };
         callResult = await callDifyEndpoint(difyApiBase, apiKey, "workflow", {
           inputs: retryInputs,
