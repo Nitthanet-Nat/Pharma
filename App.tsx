@@ -132,6 +132,25 @@ const App: React.FC = () => {
     { id: '2', name: 'Amoxicillin 250mg', dosage: '1 เม็ด', frequency: 'วันละ 2 ครั้ง หลังอาหาร', instruction: 'ทานให้ครบตามแพทย์สั่ง', type: 'pill' }
   ];
 
+  const healthHighlights = [
+    { label: 'ความดันเฉลี่ย', value: '120/78', unit: 'mmHg', tone: 'emerald' },
+    { label: 'ชีพจรล่าสุด', value: '72', unit: 'bpm', tone: 'blue' },
+    { label: 'การนอนเมื่อคืน', value: '7.5', unit: 'ชั่วโมง', tone: 'amber' },
+    { label: 'ดื่มน้ำวันนี้', value: '1.8', unit: 'ลิตร', tone: 'rose' }
+  ] as const;
+
+  const healthTasks = [
+    { title: 'ทานยาหลังอาหารเย็น', time: '18:30 น.', status: 'ครบตามเวลา' },
+    { title: 'วัดความดันโลหิต', time: '20:00 น.', status: 'รอดำเนินการ' },
+    { title: 'เดินเบา ๆ 20 นาที', time: 'ก่อน 21:00 น.', status: 'แนะนำวันนี้' }
+  ];
+
+  const healthNotes = [
+    'อาการโดยรวมคงที่ ไม่มีสัญญาณเสี่ยงเร่งด่วน',
+    'ความดันสัปดาห์นี้อยู่ในเกณฑ์ใกล้เคียงปกติ',
+    'ควรเพิ่มการดื่มน้ำอีกประมาณ 200-300 มล. ในช่วงบ่าย'
+  ];
+
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto bg-slate-50 shadow-2xl overflow-hidden relative">
       <Header />
@@ -180,18 +199,126 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'stats' && (
-          <div className="p-6 space-y-6 overflow-y-auto h-full">
-            <h2 className="text-2xl font-bold text-slate-800">แดชบอร์ดสุขภาพ</h2>
-            <HealthStats />
-            <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-lg shadow-blue-200">
-              <h3 className="font-bold text-lg mb-2 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                เคล็ดลับวันนี้
-              </h3>
-              <p className="text-blue-100 text-sm">การดื่มน้ำให้เพียงพอช่วยให้ระบบเผาผลาญทำงานได้ดีขึ้น และช่วยลดอาการปวดหัวจากการขาดน้ำได้นะครับ</p>
+          <div className="h-full overflow-y-auto bg-gradient-to-b from-emerald-50/70 via-slate-50 to-white p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">Health Profile</p>
+                <h2 className="text-2xl font-bold text-slate-800">แดชบอร์ดสุขภาพ</h2>
+              </div>
+              <div className="rounded-full border border-emerald-100 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
+                อัปเดตล่าสุด 19 มี.ค.
+              </div>
             </div>
+
+            <section className="rounded-[2rem] bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-5 text-white shadow-xl shadow-emerald-200">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/18 text-2xl font-bold ring-1 ring-white/25">
+                    ส
+                  </div>
+                  <div>
+                    <p className="text-sm text-emerald-100">โปรไฟล์สุขภาพของคุณ</p>
+                    <h3 className="text-xl font-bold">สุชาดา ใจดี</h3>
+                    <p className="text-sm text-emerald-50/90">หญิง 34 ปี • ติดตามความดันและการนอนหลับ</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm ring-1 ring-white/15">
+                  <p className="text-xs text-emerald-100">Health Score</p>
+                  <p className="text-2xl font-bold">86</p>
+                  <p className="text-xs text-emerald-50">สมดุลดี</p>
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-white/12 p-3 ring-1 ring-white/10">
+                  <p className="text-xs text-emerald-100">เป้าหมายสัปดาห์นี้</p>
+                  <p className="mt-1 text-sm font-semibold">นอนให้ครบ 7-8 ชั่วโมงต่อคืน</p>
+                </div>
+                <div className="rounded-2xl bg-white/12 p-3 ring-1 ring-white/10">
+                  <p className="text-xs text-emerald-100">สถานะยา</p>
+                  <p className="mt-1 text-sm font-semibold">ทานยาแล้ว 2 จาก 3 มื้อ</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="grid grid-cols-2 gap-3">
+              {healthHighlights.map((item) => {
+                const toneClass = {
+                  emerald: 'border-emerald-100 bg-emerald-50 text-emerald-700',
+                  blue: 'border-blue-100 bg-blue-50 text-blue-700',
+                  amber: 'border-amber-100 bg-amber-50 text-amber-700',
+                  rose: 'border-rose-100 bg-rose-50 text-rose-700'
+                }[item.tone];
+
+                return (
+                  <div key={item.label} className={`rounded-3xl border p-4 shadow-sm ${toneClass}`}>
+                    <p className="text-xs font-semibold">{item.label}</p>
+                    <div className="mt-3 flex items-end gap-1">
+                      <span className="text-2xl font-bold leading-none">{item.value}</span>
+                      <span className="pb-0.5 text-xs font-medium opacity-80">{item.unit}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+
+            <HealthStats />
+
+            <section className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">แผนติดตามวันนี้</h3>
+                  <p className="text-sm text-slate-500">สรุปสิ่งที่ต้องเช็กวันนี้ในรูปแบบหน้า overview</p>
+                </div>
+                <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  3 รายการ
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                {healthTasks.map((task) => (
+                  <div key={task.title} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500"></div>
+                      <div>
+                        <p className="font-semibold text-slate-800">{task.title}</p>
+                        <p className="text-xs text-slate-500">{task.time}</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600">
+                      {task.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="grid gap-4">
+              <div className="rounded-[2rem] bg-blue-600 p-6 text-white shadow-lg shadow-blue-200">
+                <h3 className="mb-2 flex items-center text-lg font-bold">
+                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  เคล็ดลับวันนี้
+                </h3>
+                <p className="text-sm leading-relaxed text-blue-100">
+                  การดื่มน้ำให้เพียงพอช่วยให้ระบบเผาผลาญทำงานได้ดีขึ้น และช่วยลดอาการปวดหัวจากการขาดน้ำได้ ควรจิบน้ำเพิ่มอีกเล็กน้อยในช่วงบ่าย
+                </p>
+              </div>
+
+              <div className="rounded-[2rem] bg-slate-900 p-5 text-white shadow-lg shadow-slate-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold">สรุปสุขภาพประจำวัน</h3>
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-slate-200">AI Summary</span>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {healthNotes.map((note) => (
+                    <div key={note} className="flex items-start gap-3 text-sm text-slate-200">
+                      <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>
+                      <p>{note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
           </div>
         )}
       </main>
