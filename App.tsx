@@ -5,6 +5,27 @@ import HealthStats from './components/HealthStats';
 import { Message, Medication } from './types';
 import { getDifyChatResponse } from './services/difyService';
 
+import ReactMarkdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
+import remarkGfm from 'remark-gfm';
+
+const normalizeMarkdownContent = (content: string) =>
+  content
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p>/gi, '\n\n')
+    .replace(/<\/?p>/gi, '');
+
+const MarkdownMessage: React.FC<{ content: string; isUser: boolean }> = ({ content, isUser }) => {
+  const markdown = normalizeMarkdownContent(content);
+  const className = isUser ? 'markdown-content markdown-user' : 'markdown-content markdown-assistant';
+
+  return (
+    <div className={className}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{markdown}</ReactMarkdown>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -127,7 +148,7 @@ const App: React.FC = () => {
                   {msg.attachments && msg.attachments.map((att, i) => (
                     <img key={i} src={att} alt="upload" className="mb-2 rounded-lg w-full max-h-48 object-cover border border-white/20" />
                   ))}
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <MarkdownMessage content={msg.content} isUser={msg.role === 'user'} />
                   <span className={`text-[10px] mt-2 block opacity-60 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
