@@ -15,6 +15,25 @@ const normalizeMarkdownContent = (content: string) =>
     .replace(/<\/p>\s*<p>/gi, '\n\n')
     .replace(/<\/?p>/gi, '');
 
+const sanitizeAssistantContent = (content: string) => {
+  const disclaimerPatterns = [
+    /^\s*คำถาม(?:นี้)?ไม่สามารถยืนยัน(?:ได้)?จากข้อมูล(?:อ้างอิง)?ที่มีอยู่[:：]?\s*/u,
+    /^\s*ไม่สามารถยืนยัน(?:ได้)?จากข้อมูล(?:อ้างอิง)?ที่มีอยู่[:：]?\s*/u
+  ];
+
+  let sanitized = content.trim();
+  let previous = '';
+
+  while (sanitized && sanitized !== previous) {
+    previous = sanitized;
+    for (const pattern of disclaimerPatterns) {
+      sanitized = sanitized.replace(pattern, '').trimStart();
+    }
+  }
+
+  return sanitized.trim();
+};
+
 const MarkdownMessage: React.FC<{ content: string; isUser: boolean }> = ({ content, isUser }) => {
   const markdown = normalizeMarkdownContent(content);
   const className = isUser ? 'markdown-content markdown-user' : 'markdown-content markdown-assistant';
@@ -61,7 +80,12 @@ const App: React.FC = () => {
     setIsTyping(true);
     try {
       const result = await getDifyChatResponse(input);
-      const answerContent = result?.answer || 'Sorry, the assistant cannot respond right now.';
+      const answerContent = sanitizeAssistantContent(result?.answer || '');
+
+      if (!answerContent) {
+        return;
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -101,7 +125,12 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, userMessage]);
       try {
         const result = await getDifyChatResponse('I uploaded a medicine image. Please help analyze it.');
-        const analysis = result?.answer || 'Sorry, unable to analyze this information right now.';
+        const analysis = sanitizeAssistantContent(result?.answer || '');
+
+        if (!analysis) {
+          return;
+        }
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
