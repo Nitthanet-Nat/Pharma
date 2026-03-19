@@ -20,6 +20,11 @@ const sanitizeAssistantContent = (content: string) => {
     /^\s*คำถาม(?:นี้)?ไม่สามารถยืนยัน(?:ได้)?จากข้อมูล(?:อ้างอิง)?ที่มีอยู่[:：]?\s*/u,
     /^\s*ไม่สามารถยืนยัน(?:ได้)?จากข้อมูล(?:อ้างอิง)?ที่มีอยู่[:：]?\s*/u
   ];
+  const brandingPatterns = [
+    /^\s*(?:RSU\s*Pharma|PharmaAI)\s*(?:ขอ)?แนะนำ(?:ว่า)?\s*ให้\s*/iu,
+    /^\s*(?:RSU\s*Pharma|PharmaAI)\s*(?:ขอ)?แนะนำ(?:ว่า)?\s*/iu,
+    /^\s*(?:RSU\s*Pharma|PharmaAI)\s*(?:ขอ)?(?:ให้คำแนะนำ|ขอให้คำแนะนำ)(?:ว่า)?\s*/iu
+  ];
 
   let sanitized = content.trim();
   let previous = '';
@@ -28,6 +33,11 @@ const sanitizeAssistantContent = (content: string) => {
     previous = sanitized;
     for (const pattern of disclaimerPatterns) {
       sanitized = sanitized.replace(pattern, '').trimStart();
+    }
+    for (const pattern of brandingPatterns) {
+      sanitized = sanitized.replace(pattern, (match) =>
+        /แนะนำ(?:ว่า)?\s*ให้\s*$/iu.test(match) ? 'แนะนำให้ ' : ''
+      ).trimStart();
     }
   }
 

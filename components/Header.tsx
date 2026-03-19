@@ -11,8 +11,8 @@ const Header: React.FC = () => {
           </svg>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-800">PharmaAI</h1>
-          <p className="text-xs text-emerald-600 font-medium">เภสัชกรอัจฉริยะส่วนตัวของคุณ</p>
+          <h1 className="text-xl font-bold text-slate-800">RSU Pharma</h1>
+          <p className="text-xs text-emerald-600 font-medium">ผู้ช่วยเภสัชกรอัจฉริยะส่วนตัวของคุณ</p>
         </div>
       </div>
       <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
