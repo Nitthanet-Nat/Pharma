@@ -4,12 +4,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    const rawDifyTarget = (env.DIFY_BASE_URL || env.DIFY_TARGET || 'https://dify2.nrct.ai.in.th').replace(/\/+$/, '');
+    const rawDifyTarget = (env.DIFY_BASE_URL || env.DIFY_TARGET || 'https://dify2.nrct.ai.in.th/v1').replace(/\/+$/, '');
     // Vite proxy target should be origin-like; API version path is handled by `rewrite`.
     const difyTarget = rawDifyTarget.replace(/\/v1$/i, '');
-    const appMode = (env.DIFY_APP_MODE || env.VITE_DIFY_APP_MODE || 'workflow').trim().toLowerCase();
-    const isWorkflowMode = appMode.includes('workflow');
-    const difyRoute = isWorkflowMode ? '/v1/workflows/run' : '/v1/chat-messages';
+    const difyRoute = '/v1/workflows/run';
     return {
       build: {
         emptyOutDir: true,

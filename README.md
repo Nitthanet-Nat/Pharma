@@ -1,69 +1,38 @@
-<<<<<<< HEAD
-# PharmaAI (Vite + React)
+# PharmaAI
 
-คู่มือสำหรับรันโปรเจกต์ในเครื่อง และ deploy ขึ้น GitHub + Vercel แบบปลอดภัย (เหมาะกับ public repo)
+โปรเจกต์ Vite + React สำหรับเชื่อมต่อ Dify workflow app `RSU_Pharma_Expanded_Manual`
 
-## 1) Prerequisites
+## Environment
 
-- Node.js 20+ (แนะนำ LTS)
-- npm
-- บัญชี GitHub
-- บัญชี Vercel
-- Dify API Key
+สร้าง `.env.local` จาก `.env.example` แล้วตั้งค่า:
 
-## 2) Run ในเครื่อง (Local)
+- `DIFY_API_KEY` = คีย์จริงของ Dify
+- `DIFY_BASE_URL` = `https://dify2.nrct.ai.in.th/v1`
+- `DIFY_QUERY_INPUT_KEY` = `user_input`
+- `VITE_DIFY_BASE_URL` = `/api/dify/chat`
 
-1. ติดตั้ง dependencies
-   - `npm install`
-2. สร้างไฟล์ `.env.local` จาก `.env.example`
-3. ใส่ค่าใน `.env.local`
-   - `DIFY_API_KEY=your_real_key`
-   - `DIFY_TARGET=https://dify2.nrct.ai.in.th`
-   - `VITE_DIFY_BASE_URL=/api/dify/chat`
-4. รัน dev server
-   - `npm run dev`
-5. ทดสอบ build production
-   - `npm run build`
+หมายเหตุ: โปรเจกต์นี้เรียก Dify ผ่าน workflow route เท่านั้น คือ `POST /v1/workflows/run`
 
-หมายเหตุ: โหมด `npm run dev` ใช้ Vite proxy เพื่อส่งคำขอไป Dify โดยไม่ต้องเปิดเผย key ใน browser
+## Run Local
 
-## 3) Push ขึ้น GitHub (ครั้งแรก)
+1. `npm install`
+2. `npm run dev`
+3. เปิด `http://localhost:3000`
 
-1. สร้าง repository ใหม่บน GitHub (public/private ตามที่ต้องการ)
-2. ในโฟลเดอร์โปรเจกต์ รัน:
-   - `git init`
-   - `git add .`
-   - `git commit -m "Initial commit"`
-   - `git branch -M main`
-   - `git remote add origin <GITHUB_REPO_URL>`
-   - `git push -u origin main`
+## Build
 
-## 4) Deploy ด้วย Vercel
+- `npm run build`
 
-1. เข้า Vercel แล้วเลือก `New Project`
-2. เลือก import repo จาก GitHub
-3. Build settings:
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-4. ตั้งค่า Environment Variables ใน Vercel Project Settings:
-   - `DIFY_API_KEY` = คีย์จริงของคุณ
-   - `DIFY_TARGET` = `https://dify2.nrct.ai.in.th` (หรือ endpoint Dify ของคุณ)
-   - `VITE_DIFY_BASE_URL` = `/api/dify/chat`
-5. กด Deploy
+## Deploy
 
-## 5) Security Checklist ก่อน Push
+ถ้า deploy บน Vercel ให้ตั้งค่า environment variables เดียวกันใน Project Settings และอย่าใส่คีย์จริงลงไฟล์ที่ถูก track โดย git
 
-- ห้าม commit ค่า key จริงลง repo
-- `.env.local` ต้องไม่ถูก track โดย git
+## Security Checklist Before Push
+
+- `.env.local` ต้องไม่ถูก track
 - ใช้ `.env.example` สำหรับ placeholder เท่านั้น
-- ห้ามมี fallback key ฝังใน source code
-
-ตรวจสอบเร็ว:
-
-- `git status`
-- `git ls-files | findstr /I ".env"`
-- `rg -n "app-|API_KEY|Bearer " --glob "!node_modules/**" --glob "!dist/**"`
-=======
-# Pharma
-for testing
->>>>>>> 93a13a3b7985a0b394bab73156dff7a940d22880
+- ห้าม hardcode `Bearer` token หรือ `app-...` key ในไฟล์ที่ push ขึ้น repo
+- ตรวจสอบก่อน push:
+  - `git status`
+  - `git ls-files | findstr /I ".env"`
+  - `rg -n "app-|Bearer " --glob "!node_modules/**" --glob "!dist/**" --glob "!.env.local"`

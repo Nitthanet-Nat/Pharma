@@ -2,9 +2,8 @@
 /// <reference types="vite/client" />
 
 const DIFY_CHAT_ENDPOINT = import.meta.env.VITE_DIFY_BASE_URL || "/api/dify/chat";
-const DIFY_APP_MODE = (import.meta.env.VITE_DIFY_APP_MODE || import.meta.env.DIFY_APP_MODE || "workflow").toLowerCase();
 const DIFY_QUERY_INPUT_KEY = (import.meta.env.VITE_DIFY_QUERY_INPUT_KEY || "user_input").trim() || "user_input";
-const IS_WORKFLOW_MODE = DIFY_APP_MODE.includes("workflow");
+const DIFY_USER_ID = (import.meta.env.VITE_DIFY_USER_ID || "web-client-user").trim() || "web-client-user";
 
 export interface DifyResponse {
     workflow_run_id?: string;
@@ -23,18 +22,12 @@ export interface DifyResponse {
 export const getDifyChatResponse = async (query: string) => {
     try {
         const workflowInputs: Record<string, unknown> = { [DIFY_QUERY_INPUT_KEY]: query };
-        const payload: Record<string, unknown> = IS_WORKFLOW_MODE
-            ? {
-                inputs: workflowInputs,
-                response_mode: "blocking",
-                user: "test-user-1",
-            }
-            : {
-                query,
-                inputs: workflowInputs,
-                response_mode: "blocking",
-                user: "test-user-1",
-            };
+        const payload: Record<string, unknown> = {
+            query,
+            inputs: workflowInputs,
+            response_mode: "blocking",
+            user: DIFY_USER_ID,
+        };
 
         const response = await fetch(DIFY_CHAT_ENDPOINT, {
             method: "POST",
@@ -47,7 +40,11 @@ export const getDifyChatResponse = async (query: string) => {
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             console.error("Dify API Error Status:", response.status, errorData);
-            throw new Error(`Dify API call failed with status: ${response.status}`);
+            const detailMessage =
+                errorData && typeof errorData === "object" && "details" in errorData
+                    ? JSON.stringify((errorData as { details?: unknown }).details)
+                    : null;
+            throw new Error(detailMessage || `Dify API call failed with status: ${response.status}`);
         }
 
         const data: DifyResponse = await response.json();
