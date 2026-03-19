@@ -218,7 +218,7 @@ const App: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-emerald-100">โปรไฟล์สุขภาพของคุณ</p>
-                    <h3 className="text-xl font-bold">สุชาดา ใจดี</h3>
+                    <h3 className="text-xl font-bold">สมศรี ใจดี</h3>
                     <p className="text-sm text-emerald-50/90">หญิง 34 ปี • ติดตามความดันและการนอนหลับ</p>
                   </div>
                 </div>
