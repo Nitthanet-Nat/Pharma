@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String           @id @default(cuid())
+  email                  String?          @unique
+  name                   String?
+  activePatientPersonaId String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  patientPersonas        PatientPersona[]
+  chatSessions           ChatSession[]
+  chatMessages           ChatMessage[]
+  activePatientPersona   PatientPersona?  @relation("ActivePatientPersona", fields: [activePatientPersonaId], references: [id], onDelete: SetNull)
+
+  @@index([activePatientPersonaId])
+}
+
+model PatientPersona {
+  id                  String              @id @default(cuid())
+  userId              String
+  displayName         String
+  relationship        String
+  gender              String?
+  dateOfBirth         DateTime?
+  age                 Int?
+  weightKg            Float?
+  heightCm            Float?
+  pregnancyStatus     String?
+  breastfeedingStatus String?
+  medicationHistory   String?
+  preferredLanguage   String              @default("th")
+  emergencyContact    String?
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeForUsers      User[]              @relation("ActivePatientPersona")
+  allergies           Allergy[]
+  chronicDiseases     ChronicDisease[]
+  currentMedications  CurrentMedication[]
+  chatSessions        ChatSession[]
+  chatMessages        ChatMessage[]
+
+  @@index([userId])
+  @@index([relationship])
+}
+
+model Allergy {
+  id               String         @id @default(cuid())
+  patientPersonaId String
+  substance        String
+  reaction         String?
+  severity         String?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  patientPersona   PatientPersona @relation(fields: [patientPersonaId], references: [id], onDelete: Cascade)
+
+  @@index([patientPersonaId])
+}
+
+model ChronicDisease {
+  id               String         @id @default(cuid())
+  patientPersonaId String
+  name             String
+  severity         String?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  patientPersona   PatientPersona @relation(fields: [patientPersonaId], references: [id], onDelete: Cascade)
+
+  @@index([patientPersonaId])
+}
+
+model CurrentMedication {
+  id               String         @id @default(cuid())
+  patientPersonaId String
+  name             String
+  dose             String?
+  frequency        String?
+  startedAt        DateTime?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  patientPersona   PatientPersona @relation(fields: [patientPersonaId], references: [id], onDelete: Cascade)
+
+  @@index([patientPersonaId])
+}
+
+model ChatSession {
+  id               String         @id @default(cuid())
+  userId           String
+  patientPersonaId String?
+  title            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientPersona   PatientPersona? @relation(fields: [patientPersonaId], references: [id], onDelete: SetNull)
+  messages         ChatMessage[]
+
+  @@index([userId])
+  @@index([patientPersonaId])
+}
+
+model ChatMessage {
+  id               String          @id @default(cuid())
+  userId           String
+  patientPersonaId String?
+  chatSessionId    String?
+  role             String
+  content          String
+  personaSnapshot  Json?
+  createdAt        DateTime        @default(now())
+
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientPersona   PatientPersona? @relation(fields: [patientPersonaId], references: [id], onDelete: SetNull)
+  chatSession      ChatSession?    @relation(fields: [chatSessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([patientPersonaId])
+  @@index([chatSessionId])
+}

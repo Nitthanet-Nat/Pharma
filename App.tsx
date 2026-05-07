@@ -2,8 +2,14 @@
 import Header from './components/Header';
 import MedicationCard from './components/MedicationCard';
 import HealthStats from './components/HealthStats';
-import { Message, Medication } from './types';
+import PersonaList from './components/PersonaList';
+import PersonaForm from './components/PersonaForm';
+import ActivePersonaSelector from './components/ActivePersonaSelector';
+import PersonaHealthSummary from './components/PersonaHealthSummary';
+import { Message, Medication, PatientPersona, PatientPersonaFormData } from './types';
 import { getDifyChatResponse } from './services/difyService';
+import { personaService } from './services/personaService';
+import { buildChatQueryWithPersona } from './services/personaContext';
 
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
@@ -66,7 +72,11 @@ const App: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'meds' | 'stats'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'personas' | 'meds' | 'stats'>('chat');
+  const [personas, setPersonas] = useState<PatientPersona[]>([]);
+  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  const [isPersonaFormOpen, setIsPersonaFormOpen] = useState(false);
+  const [editingPersona, setEditingPersona] = useState<PatientPersona | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,19 +87,66 @@ const App: React.FC = () => {
     }
   }, [messages, isTyping]);
 
+  useEffect(() => {
+    const loadPersonas = async () => {
+      const [loadedPersonas, loadedActiveId] = await Promise.all([
+        personaService.getAll(),
+        personaService.getActive(),
+      ]);
+      setPersonas(loadedPersonas);
+      setActivePersonaId(loadedActiveId || loadedPersonas[0]?.id || null);
+    };
+
+    loadPersonas();
+  }, []);
+
+  const activePersona = personas.find((persona) => persona.id === activePersonaId) || personas[0] || null;
+
+  const handleSetActivePersona = async (id: string) => {
+    setActivePersonaId(id);
+    await personaService.setActive(id);
+  };
+
+  const handleSavePersona = async (data: PatientPersonaFormData) => {
+    const savedPersona = editingPersona
+      ? await personaService.update(editingPersona.id, data)
+      : await personaService.create(data);
+    const updatedPersonas = editingPersona
+      ? personas.map((persona) => (persona.id === savedPersona.id ? savedPersona : persona))
+      : [savedPersona, ...personas];
+    setPersonas(updatedPersonas);
+    setEditingPersona(null);
+    setIsPersonaFormOpen(false);
+    if (!activePersonaId) {
+      await handleSetActivePersona(savedPersona.id);
+    }
+  };
+
+  const handleDeletePersona = async (id: string) => {
+    await personaService.delete(id);
+    const updatedPersonas = personas.filter((persona) => persona.id !== id);
+    setPersonas(updatedPersonas);
+    if (activePersonaId === id) {
+      const nextActiveId = updatedPersonas[0]?.id || null;
+      setActivePersonaId(nextActiveId);
+      if (nextActiveId) await personaService.setActive(nextActiveId);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
+    const userInput = input;
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: userInput,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
     try {
-      const result = await getDifyChatResponse(input);
+      const result = await getDifyChatResponse(buildChatQueryWithPersona(userInput, activePersona));
       const answerContent = sanitizeAssistantContent(result?.answer || '');
 
       if (!answerContent) {
@@ -134,7 +191,9 @@ const App: React.FC = () => {
       };
       setMessages(prev => [...prev, userMessage]);
       try {
-        const result = await getDifyChatResponse('I uploaded a medicine image. Please help analyze it.');
+        const result = await getDifyChatResponse(
+          buildChatQueryWithPersona('I uploaded a medicine image. Please help analyze it.', activePersona)
+        );
         const analysis = sanitizeAssistantContent(result?.answer || '');
 
         if (!analysis) {
@@ -197,6 +256,12 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-hidden flex flex-col relative">
         {activeTab === 'chat' && (
           <div className="flex-1 flex flex-col p-4 space-y-4 overflow-y-auto scroll-smooth" ref={scrollRef}>
+            <ActivePersonaSelector
+              personas={personas}
+              activePersonaId={activePersonaId}
+              onChange={handleSetActivePersona}
+            />
+            <PersonaHealthSummary persona={activePersona} />
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.role === 'user'
@@ -222,6 +287,49 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'personas' && (
+          <div className="h-full overflow-y-auto bg-slate-50 p-5 space-y-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">Patient Persona</p>
+                <h2 className="text-2xl font-bold text-slate-800">โปรไฟล์ผู้ป่วย</h2>
+                <p className="mt-1 text-sm text-slate-500">จัดการข้อมูลสมาชิกเพื่อให้การปรึกษายาปลอดภัยขึ้น</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingPersona(null);
+                  setIsPersonaFormOpen(true);
+                }}
+                className="shrink-0 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-100"
+              >
+                + เพิ่มสมาชิก
+              </button>
+            </div>
+
+            {isPersonaFormOpen && (
+              <PersonaForm
+                initialPersona={editingPersona}
+                onSubmit={handleSavePersona}
+                onCancel={() => {
+                  setEditingPersona(null);
+                  setIsPersonaFormOpen(false);
+                }}
+              />
+            )}
+
+            <PersonaList
+              personas={personas}
+              activePersonaId={activePersonaId}
+              onSelect={handleSetActivePersona}
+              onEdit={(persona) => {
+                setEditingPersona(persona);
+                setIsPersonaFormOpen(true);
+              }}
+              onDelete={handleDeletePersona}
+            />
           </div>
         )}
 
@@ -426,6 +534,15 @@ const App: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
           <span className="text-[10px] font-bold">ปรึกษา AI</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('personas')}
+          className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'personas' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
+        >
+          <svg className="w-6 h-6" fill={activeTab === 'personas' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-6a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0" />
+          </svg>
+          <span className="text-[10px] font-bold">ผู้ป่วย</span>
         </button>
         <button
           onClick={() => setActiveTab('meds')}

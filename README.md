@@ -16,8 +16,38 @@
 ## Run Local
 
 1. `npm install`
-2. `npm run dev`
-3. เปิด `http://localhost:3000`
+2. Start XAMPP MySQL on port `3306`
+3. Create database `rsu_pharma` if it does not already exist:
+   `CREATE DATABASE rsu_pharma CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+4. Set Prisma database URL in `.env`:
+   `DATABASE_URL="mysql://root:@localhost:3306/rsu_pharma"`
+5. Run Prisma migration and seed:
+   `npx prisma migrate dev --name init_patient_personas`
+   `npx prisma db seed`
+6. `npm run dev`
+7. เปิด `http://localhost:3000`
+
+## Patient Persona / Family Profiles
+
+The app now supports patient personas for family consultation context:
+
+- Prisma models: `User`, `PatientPersona`, `Allergy`, `ChronicDisease`, `CurrentMedication`, `ChatSession`, `ChatMessage`
+- API routes:
+  - `GET /api/personas?userId=web-client-user`
+  - `POST /api/personas`
+  - `GET /api/personas/:id`
+  - `PUT /api/personas/:id`
+  - `DELETE /api/personas/:id`
+  - `GET /api/personas/active?userId=web-client-user`
+  - `POST /api/personas/active`
+- UI components:
+  - `PersonaList`
+  - `PersonaCard`
+  - `PersonaForm`
+  - `ActivePersonaSelector`
+  - `PersonaHealthSummary`
+
+When a chat message is sent, the active patient profile is formatted as `Patient Profile:` and prepended with safety rules before the request is sent to the Dify workflow. In Vite local dev, persona management falls back to `localStorage` if the serverless API runtime is unavailable.
 
 ## Build
 
