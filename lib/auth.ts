@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import { prisma } from './prisma';
 
 type RequestLike = {
   headers?: Record<string, string | string[] | undefined>;
@@ -82,6 +81,7 @@ export const getSessionUser = async (req: RequestLike) => {
   };
   if (!session.sub || !session.exp || session.exp < Math.floor(Date.now() / 1000)) return null;
 
+  const { prisma } = await import('./prisma');
   return prisma.user.findUnique({
     where: { id: session.sub },
     select: { id: true, email: true, name: true, role: true, activePatientPersonaId: true },

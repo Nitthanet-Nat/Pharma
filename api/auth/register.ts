@@ -1,5 +1,4 @@
 import { createSessionCookie, hashPassword } from '../../lib/auth';
-import { prisma } from '../../lib/prisma';
 
 type VercelRequest = {
   method?: string;
@@ -49,6 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    const { prisma } = await import('../../lib/prisma');
     const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
     if (existing) {
       res.status(409).json({ error: 'This email is already registered' });

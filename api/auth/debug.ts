@@ -1,5 +1,3 @@
-import { PrismaClient } from '@prisma/client';
-
 type VercelRequest = {
   method?: string;
 };
@@ -33,8 +31,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     hasAdminPassword: Boolean(process.env.ADMIN_PASSWORD),
   };
 
-  const prisma = new PrismaClient();
   try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
     const columns = await prisma.$queryRaw<Array<{ column_name: string }>>`
       SELECT column_name
       FROM information_schema.columns
@@ -59,13 +59,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         columns.some((column) => column.column_name === 'role'),
       recentMigrations: migrations,
     });
+    await prisma.$disconnect().catch(() => undefined);
   } catch (error) {
     res.status(500).json({
       ok: false,
       env,
       error: error instanceof Error ? error.message : 'Unknown auth debug error',
     });
-  } finally {
-    await prisma.$disconnect().catch(() => undefined);
   }
 }

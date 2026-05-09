@@ -1,5 +1,4 @@
 import { createSessionCookie, hashPassword, verifyPassword } from '../../lib/auth';
-import { prisma } from '../../lib/prisma';
 
 type VercelRequest = {
   method?: string;
@@ -52,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || '';
+    const { prisma } = await import('../../lib/prisma');
 
     if (adminEmail && adminPassword && email === adminEmail && password === adminPassword) {
       const admin = await prisma.user.upsert({
