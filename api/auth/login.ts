@@ -22,21 +22,25 @@ const publicUser = (user: { id: string; email: string | null; name: string | nul
   name: user.name,
   role: user.role,
 });
-const authError = (error: unknown) =>
-  error instanceof Error && /column|passwordHash|role|does not exist|Unknown arg/i.test(error.message)
-    ? 'Database auth columns are missing. Run Prisma migration on Neon first.'
-    : error instanceof Error
-      ? error.message
-      : 'Login failed';
+const authError = (error: unknown) => {
+  console.error('Auth login failed', error);
+  if (error instanceof Error && /column|passwordHash|role|does not exist|Unknown arg/i.test(error.message)) {
+    return 'Database auth columns are missing. Run Prisma migration on Neon first.';
+  }
+  if (error instanceof Error && /datasource|DATABASE_URL|protocol|connect|Can't reach|P1001|P1012/i.test(error.message)) {
+    return 'Database connection failed. Check DATABASE_URL in Vercel.';
+  }
+  return error instanceof Error ? error.message : 'Login failed';
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).json({ error: 'Method Not Allowed' });
-    return;
-  }
-
   try {
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      res.status(405).json({ error: 'Method Not Allowed' });
+      return;
+    }
+
     const body = parseBody(req.body);
     const email = getString(body.email).toLowerCase();
     const password = getString(body.password);
