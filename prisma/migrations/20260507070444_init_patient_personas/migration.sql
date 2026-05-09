@@ -1,144 +1,168 @@
 -- CreateTable
-CREATE TABLE `User` (
-    `id` VARCHAR(191) NOT NULL,
-    `email` VARCHAR(191) NULL,
-    `name` VARCHAR(191) NULL,
-    `activePatientPersonaId` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT,
+    "name" TEXT,
+    "activePatientPersonaId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    UNIQUE INDEX `User_email_key`(`email`),
-    INDEX `User_activePatientPersonaId_idx`(`activePatientPersonaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `PatientPersona` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `displayName` VARCHAR(191) NOT NULL,
-    `relationship` VARCHAR(191) NOT NULL,
-    `gender` VARCHAR(191) NULL,
-    `dateOfBirth` DATETIME(3) NULL,
-    `age` INTEGER NULL,
-    `weightKg` DOUBLE NULL,
-    `heightCm` DOUBLE NULL,
-    `pregnancyStatus` VARCHAR(191) NULL,
-    `breastfeedingStatus` VARCHAR(191) NULL,
-    `medicationHistory` VARCHAR(191) NULL,
-    `preferredLanguage` VARCHAR(191) NOT NULL DEFAULT 'th',
-    `emergencyContact` VARCHAR(191) NULL,
-    `notes` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "PatientPersona" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "displayName" TEXT NOT NULL,
+    "relationship" TEXT NOT NULL,
+    "gender" TEXT,
+    "dateOfBirth" TIMESTAMP(3),
+    "age" INTEGER,
+    "weightKg" DOUBLE PRECISION,
+    "heightCm" DOUBLE PRECISION,
+    "pregnancyStatus" TEXT,
+    "breastfeedingStatus" TEXT,
+    "medicationHistory" TEXT,
+    "preferredLanguage" TEXT NOT NULL DEFAULT 'th',
+    "emergencyContact" TEXT,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `PatientPersona_userId_idx`(`userId`),
-    INDEX `PatientPersona_relationship_idx`(`relationship`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "PatientPersona_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `Allergy` (
-    `id` VARCHAR(191) NOT NULL,
-    `patientPersonaId` VARCHAR(191) NOT NULL,
-    `substance` VARCHAR(191) NOT NULL,
-    `reaction` VARCHAR(191) NULL,
-    `severity` VARCHAR(191) NULL,
-    `notes` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "Allergy" (
+    "id" TEXT NOT NULL,
+    "patientPersonaId" TEXT NOT NULL,
+    "substance" TEXT NOT NULL,
+    "reaction" TEXT,
+    "severity" TEXT,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `Allergy_patientPersonaId_idx`(`patientPersonaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `ChronicDisease` (
-    `id` VARCHAR(191) NOT NULL,
-    `patientPersonaId` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `severity` VARCHAR(191) NULL,
-    `notes` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
-    INDEX `ChronicDisease_patientPersonaId_idx`(`patientPersonaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Allergy_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `CurrentMedication` (
-    `id` VARCHAR(191) NOT NULL,
-    `patientPersonaId` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `dose` VARCHAR(191) NULL,
-    `frequency` VARCHAR(191) NULL,
-    `startedAt` DATETIME(3) NULL,
-    `notes` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "ChronicDisease" (
+    "id" TEXT NOT NULL,
+    "patientPersonaId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "severity" TEXT,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `CurrentMedication_patientPersonaId_idx`(`patientPersonaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "ChronicDisease_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `ChatSession` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `patientPersonaId` VARCHAR(191) NULL,
-    `title` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+CREATE TABLE "CurrentMedication" (
+    "id" TEXT NOT NULL,
+    "patientPersonaId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "dose" TEXT,
+    "frequency" TEXT,
+    "startedAt" TIMESTAMP(3),
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `ChatSession_userId_idx`(`userId`),
-    INDEX `ChatSession_patientPersonaId_idx`(`patientPersonaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "CurrentMedication_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
-CREATE TABLE `ChatMessage` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `patientPersonaId` VARCHAR(191) NULL,
-    `chatSessionId` VARCHAR(191) NULL,
-    `role` VARCHAR(191) NOT NULL,
-    `content` VARCHAR(191) NOT NULL,
-    `personaSnapshot` JSON NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+CREATE TABLE "ChatSession" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "patientPersonaId" TEXT,
+    "title" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    INDEX `ChatMessage_userId_idx`(`userId`),
-    INDEX `ChatMessage_patientPersonaId_idx`(`patientPersonaId`),
-    INDEX `ChatMessage_chatSessionId_idx`(`chatSessionId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "ChatSession_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ChatMessage" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "patientPersonaId" TEXT,
+    "chatSessionId" TEXT,
+    "role" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "personaSnapshot" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ChatMessage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "User_activePatientPersonaId_idx" ON "User"("activePatientPersonaId");
+
+-- CreateIndex
+CREATE INDEX "PatientPersona_userId_idx" ON "PatientPersona"("userId");
+
+-- CreateIndex
+CREATE INDEX "PatientPersona_relationship_idx" ON "PatientPersona"("relationship");
+
+-- CreateIndex
+CREATE INDEX "Allergy_patientPersonaId_idx" ON "Allergy"("patientPersonaId");
+
+-- CreateIndex
+CREATE INDEX "ChronicDisease_patientPersonaId_idx" ON "ChronicDisease"("patientPersonaId");
+
+-- CreateIndex
+CREATE INDEX "CurrentMedication_patientPersonaId_idx" ON "CurrentMedication"("patientPersonaId");
+
+-- CreateIndex
+CREATE INDEX "ChatSession_userId_idx" ON "ChatSession"("userId");
+
+-- CreateIndex
+CREATE INDEX "ChatSession_patientPersonaId_idx" ON "ChatSession"("patientPersonaId");
+
+-- CreateIndex
+CREATE INDEX "ChatMessage_userId_idx" ON "ChatMessage"("userId");
+
+-- CreateIndex
+CREATE INDEX "ChatMessage_patientPersonaId_idx" ON "ChatMessage"("patientPersonaId");
+
+-- CreateIndex
+CREATE INDEX "ChatMessage_chatSessionId_idx" ON "ChatMessage"("chatSessionId");
 
 -- AddForeignKey
-ALTER TABLE `User` ADD CONSTRAINT `User_activePatientPersonaId_fkey` FOREIGN KEY (`activePatientPersonaId`) REFERENCES `PatientPersona`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_activePatientPersonaId_fkey" FOREIGN KEY ("activePatientPersonaId") REFERENCES "PatientPersona"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PatientPersona` ADD CONSTRAINT `PatientPersona_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PatientPersona" ADD CONSTRAINT "PatientPersona_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Allergy` ADD CONSTRAINT `Allergy_patientPersonaId_fkey` FOREIGN KEY (`patientPersonaId`) REFERENCES `PatientPersona`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Allergy" ADD CONSTRAINT "Allergy_patientPersonaId_fkey" FOREIGN KEY ("patientPersonaId") REFERENCES "PatientPersona"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChronicDisease` ADD CONSTRAINT `ChronicDisease_patientPersonaId_fkey` FOREIGN KEY (`patientPersonaId`) REFERENCES `PatientPersona`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChronicDisease" ADD CONSTRAINT "ChronicDisease_patientPersonaId_fkey" FOREIGN KEY ("patientPersonaId") REFERENCES "PatientPersona"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `CurrentMedication` ADD CONSTRAINT `CurrentMedication_patientPersonaId_fkey` FOREIGN KEY (`patientPersonaId`) REFERENCES `PatientPersona`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CurrentMedication" ADD CONSTRAINT "CurrentMedication_patientPersonaId_fkey" FOREIGN KEY ("patientPersonaId") REFERENCES "PatientPersona"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChatSession` ADD CONSTRAINT `ChatSession_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChatSession" ADD CONSTRAINT "ChatSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChatSession` ADD CONSTRAINT `ChatSession_patientPersonaId_fkey` FOREIGN KEY (`patientPersonaId`) REFERENCES `PatientPersona`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ChatSession" ADD CONSTRAINT "ChatSession_patientPersonaId_fkey" FOREIGN KEY ("patientPersonaId") REFERENCES "PatientPersona"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChatMessage` ADD CONSTRAINT `ChatMessage_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChatMessage` ADD CONSTRAINT `ChatMessage_patientPersonaId_fkey` FOREIGN KEY (`patientPersonaId`) REFERENCES `PatientPersona`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_patientPersonaId_fkey" FOREIGN KEY ("patientPersonaId") REFERENCES "PatientPersona"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `ChatMessage` ADD CONSTRAINT `ChatMessage_chatSessionId_fkey` FOREIGN KEY (`chatSessionId`) REFERENCES `ChatSession`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_chatSessionId_fkey" FOREIGN KEY ("chatSessionId") REFERENCES "ChatSession"("id") ON DELETE SET NULL ON UPDATE CASCADE;
