@@ -98,6 +98,8 @@ const App: React.FC = () => {
       try {
         const user = await authService.me();
         setAuthUser(user);
+      } catch {
+        setAuthUser(null);
       } finally {
         setIsAuthLoading(false);
       }

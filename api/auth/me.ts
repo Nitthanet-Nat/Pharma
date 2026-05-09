@@ -12,12 +12,17 @@ type VercelResponse = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: 'Method Not Allowed' });
-    return;
-  }
+  try {
+    if (req.method !== 'GET') {
+      res.setHeader('Allow', 'GET');
+      res.status(405).json({ error: 'Method Not Allowed' });
+      return;
+    }
 
-  const user = await getSessionUser(req);
-  res.status(200).json({ user });
+    const user = await getSessionUser(req);
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Auth me failed', error);
+    res.status(200).json({ user: null });
+  }
 }
