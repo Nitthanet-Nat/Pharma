@@ -80,101 +80,57 @@ const writeLocalPersonas = (personas: PatientPersona[]) => {
 const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(url, {
     ...init,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
     },
   });
   if (!response.ok) throw new Error(`Persona API failed with status ${response.status}`);
+  if (response.status === 204) return undefined as T;
   return response.json();
 };
 
 export const personaService = {
   async getAll(): Promise<PatientPersona[]> {
-    try {
-      return await requestJson<PatientPersona[]>(`/api/personas?userId=${encodeURIComponent(USER_ID)}`);
-    } catch {
-      return readLocalPersonas();
-    }
+    return requestJson<PatientPersona[]>(`/api/personas?userId=${encodeURIComponent(USER_ID)}`);
   },
 
   async getById(id: string): Promise<PatientPersona | null> {
-    try {
-      return await requestJson<PatientPersona>(`/api/personas/${id}?userId=${encodeURIComponent(USER_ID)}`);
-    } catch {
-      return readLocalPersonas().find((persona) => persona.id === id) || null;
-    }
+    return requestJson<PatientPersona>(`/api/personas/${id}?userId=${encodeURIComponent(USER_ID)}`);
   },
 
   async create(data: PatientPersonaFormData): Promise<PatientPersona> {
     const normalized = normalizeFormData(data);
-    try {
-      return await requestJson<PatientPersona>('/api/personas', {
-        method: 'POST',
-        body: JSON.stringify({ ...normalized, userId: USER_ID }),
-      });
-    } catch {
-      const personas = readLocalPersonas();
-      const persona: PatientPersona = {
-        ...normalized,
-        id: makeId(),
-        userId: USER_ID,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      writeLocalPersonas([...personas, persona]);
-      return persona;
-    }
+    return requestJson<PatientPersona>('/api/personas', {
+      method: 'POST',
+      body: JSON.stringify({ ...normalized, userId: USER_ID }),
+    });
   },
 
   async update(id: string, data: PatientPersonaFormData): Promise<PatientPersona> {
     const normalized = normalizeFormData(data);
-    try {
-      return await requestJson<PatientPersona>(`/api/personas/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ ...normalized, userId: USER_ID }),
-      });
-    } catch {
-      const personas = readLocalPersonas();
-      const updated = personas.map((persona) =>
-        persona.id === id ? { ...persona, ...normalized, updatedAt: new Date().toISOString() } : persona
-      );
-      writeLocalPersonas(updated);
-      return updated.find((persona) => persona.id === id)!;
-    }
+    return requestJson<PatientPersona>(`/api/personas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...normalized, userId: USER_ID }),
+    });
   },
 
   async delete(id: string): Promise<void> {
-    try {
-      await requestJson(`/api/personas/${id}`, { method: 'DELETE', body: JSON.stringify({ userId: USER_ID }) });
-    } catch {
-      const personas = readLocalPersonas().filter((persona) => persona.id !== id);
-      writeLocalPersonas(personas);
-      if (localStorage.getItem(ACTIVE_KEY) === id) {
-        localStorage.setItem(ACTIVE_KEY, personas[0]?.id || '');
-      }
-    }
+    await requestJson(`/api/personas/${id}`, { method: 'DELETE', body: JSON.stringify({ userId: USER_ID }) });
   },
 
   async getActive(): Promise<string | null> {
-    try {
-      const result = await requestJson<{ activePatientPersonaId: string | null }>(
-        `/api/personas/active?userId=${encodeURIComponent(USER_ID)}`
-      );
-      return result.activePatientPersonaId;
-    } catch {
-      return localStorage.getItem(ACTIVE_KEY) || readLocalPersonas()[0]?.id || null;
-    }
+    const result = await requestJson<{ activePatientPersonaId: string | null }>(
+      `/api/personas/active?userId=${encodeURIComponent(USER_ID)}`
+    );
+    return result.activePatientPersonaId;
   },
 
   async setActive(id: string): Promise<void> {
-    try {
-      await requestJson('/api/personas/active', {
-        method: 'POST',
-        body: JSON.stringify({ userId: USER_ID, patientPersonaId: id }),
-      });
-    } catch {
-      localStorage.setItem(ACTIVE_KEY, id);
-    }
+    await requestJson('/api/personas/active', {
+      method: 'POST',
+      body: JSON.stringify({ userId: USER_ID, patientPersonaId: id }),
+    });
   },
 };

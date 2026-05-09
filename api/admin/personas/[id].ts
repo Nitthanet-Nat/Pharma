@@ -1,7 +1,9 @@
 import { prisma } from '../../../lib/prisma';
+import { requireAdmin, sendAuthError } from '../../../lib/auth';
 
 type VercelRequest = {
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
   query?: Record<string, string | string[]>;
   body?: Record<string, unknown> | string;
 };
@@ -87,6 +89,13 @@ const buildNestedCreate = (body: Record<string, unknown>) => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    await requireAdmin(req, res);
+  } catch (error) {
+    sendAuthError(error, res);
+    return;
+  }
+
   const id = getId(req);
   if (!id) {
     res.status(400).json({ error: 'persona id is required' });
@@ -112,6 +121,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!personaData.displayName) {
       res.status(400).json({ error: 'displayName is required' });
       return;
+    }
+
+    const existing = await prisma.patientPersona.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: 'Patient persona not found' });
+      return;
+    }
+
+    const userName = getString(body.userName);
+    const userEmail = getString(body.userEmail);
+    if (userName || userEmail) {
+      await prisma.user.update({
+        where: { id: existing.userId },
+        data: {
+          name: userName || undefined,
+          email: userEmail || undefined,
+        },
+      });
     }
 
     const persona = await prisma.patientPersona.update({

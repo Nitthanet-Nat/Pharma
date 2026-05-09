@@ -1,7 +1,9 @@
 import { prisma } from '../../lib/prisma';
+import { requireUser, sendAuthError } from '../../lib/auth';
 
 type VercelRequest = {
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
   query?: Record<string, string | string[]>;
   body?: Record<string, unknown> | string;
 };
@@ -90,6 +92,14 @@ const buildNestedCreate = (body: Record<string, unknown>) => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  let currentUser: { id: string };
+  try {
+    currentUser = await requireUser(req, res);
+  } catch (error) {
+    sendAuthError(error, res);
+    return;
+  }
+
   const id = getId(req);
   if (!id) {
     res.status(400).json({ error: 'persona id is required' });
@@ -97,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'GET') {
-    const userId = getUserId(req);
+    const userId = currentUser.id;
     const persona = await prisma.patientPersona.findFirst({
       where: { id, userId },
       include: includeHealthContext,
@@ -112,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'PUT') {
     const body = parseBody(req.body);
-    const userId = getUserId(req, body);
+    const userId = currentUser.id;
     const existing = await prisma.patientPersona.findFirst({ where: { id, userId }, select: { id: true } });
     if (!existing) {
       res.status(404).json({ error: 'Patient persona not found' });
@@ -142,7 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'DELETE') {
     const body = parseBody(req.body);
-    const userId = getUserId(req, body);
+    const userId = currentUser.id;
     const existing = await prisma.patientPersona.findFirst({ where: { id, userId }, select: { id: true } });
     if (!existing) {
       res.status(404).json({ error: 'Patient persona not found' });

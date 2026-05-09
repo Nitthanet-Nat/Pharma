@@ -22,6 +22,13 @@ export interface HealthMetrics {
   heartRate: number;
 }
 
+export interface AuthUser {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+  role: 'USER' | 'ADMIN' | string;
+}
+
 export type Relationship =
   | 'myself'
   | 'father'

@@ -1,7 +1,9 @@
 import { prisma } from '../../../lib/prisma';
+import { requireAdmin, sendAuthError } from '../../../lib/auth';
 
 type VercelRequest = {
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
   body?: Record<string, unknown> | string;
 };
 
@@ -103,6 +105,13 @@ const ensureUser = (body: Record<string, unknown>) => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    await requireAdmin(req, res);
+  } catch (error) {
+    sendAuthError(error, res);
+    return;
+  }
+
   if (req.method === 'GET') {
     const personas = await prisma.patientPersona.findMany({
       include: includeHealthContext,

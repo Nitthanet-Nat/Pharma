@@ -1,7 +1,9 @@
 import { prisma } from '../../lib/prisma';
+import { requireUser, sendAuthError } from '../../lib/auth';
 
 type VercelRequest = {
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
   query?: Record<string, string | string[]>;
   body?: Record<string, unknown> | string;
 };
@@ -99,8 +101,16 @@ const buildNestedCreate = (body: Record<string, unknown>) => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  let currentUser: { id: string };
+  try {
+    currentUser = await requireUser(req, res);
+  } catch (error) {
+    sendAuthError(error, res);
+    return;
+  }
+
   if (req.method === 'GET') {
-    const userId = getUserId(req);
+    const userId = currentUser.id;
     await ensureUser(userId);
     const personas = await prisma.patientPersona.findMany({
       where: { userId },
@@ -113,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     const body = parseBody(req.body);
-    const userId = getUserId(req, body);
+    const userId = currentUser.id;
     const personaData = buildPersonaData(body, userId);
 
     if (!personaData.displayName) {

@@ -7,10 +7,12 @@ import PersonaForm from './components/PersonaForm';
 import ActivePersonaSelector from './components/ActivePersonaSelector';
 import PersonaHealthSummary from './components/PersonaHealthSummary';
 import AdminDashboard from './components/AdminDashboard';
-import { Message, Medication, PatientPersona, PatientPersonaFormData } from './types';
+import LoginScreen from './components/LoginScreen';
+import { AuthUser, Message, Medication, PatientPersona, PatientPersonaFormData } from './types';
 import { getDifyChatResponse } from './services/difyService';
 import { personaService } from './services/personaService';
 import { buildChatQueryWithPersona } from './services/personaContext';
+import { authService } from './services/authService';
 
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
@@ -74,10 +76,13 @@ const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'personas' | 'meds' | 'stats' | 'admin'>('chat');
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [personas, setPersonas] = useState<PatientPersona[]>([]);
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
   const [isPersonaFormOpen, setIsPersonaFormOpen] = useState(false);
   const [editingPersona, setEditingPersona] = useState<PatientPersona | null>(null);
+  const [personaError, setPersonaError] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,17 +94,45 @@ const App: React.FC = () => {
   }, [messages, isTyping]);
 
   useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const user = await authService.me();
+        setAuthUser(user);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (!authUser) return;
+
     const loadPersonas = async () => {
-      const [loadedPersonas, loadedActiveId] = await Promise.all([
-        personaService.getAll(),
-        personaService.getActive(),
-      ]);
-      setPersonas(loadedPersonas);
-      setActivePersonaId(loadedActiveId || loadedPersonas[0]?.id || null);
+      try {
+        const [loadedPersonas, loadedActiveId] = await Promise.all([
+          personaService.getAll(),
+          personaService.getActive(),
+        ]);
+        setPersonas(loadedPersonas);
+        setActivePersonaId(loadedActiveId || loadedPersonas[0]?.id || null);
+        setPersonaError('');
+      } catch (error) {
+        setPersonaError(error instanceof Error ? error.message : 'Unable to load patient profiles');
+      }
     };
 
     loadPersonas();
-  }, []);
+  }, [authUser]);
+
+  const handleLogout = async () => {
+    await authService.logout();
+    setAuthUser(null);
+    setPersonas([]);
+    setActivePersonaId(null);
+    setActiveTab('chat');
+  };
 
   const activePersona = personas.find((persona) => persona.id === activePersonaId) || personas[0] || null;
 
@@ -109,28 +142,38 @@ const App: React.FC = () => {
   };
 
   const handleSavePersona = async (data: PatientPersonaFormData) => {
-    const savedPersona = editingPersona
-      ? await personaService.update(editingPersona.id, data)
-      : await personaService.create(data);
-    const updatedPersonas = editingPersona
-      ? personas.map((persona) => (persona.id === savedPersona.id ? savedPersona : persona))
-      : [savedPersona, ...personas];
-    setPersonas(updatedPersonas);
-    setEditingPersona(null);
-    setIsPersonaFormOpen(false);
-    if (!activePersonaId) {
-      await handleSetActivePersona(savedPersona.id);
+    try {
+      const savedPersona = editingPersona
+        ? await personaService.update(editingPersona.id, data)
+        : await personaService.create(data);
+      const updatedPersonas = editingPersona
+        ? personas.map((persona) => (persona.id === savedPersona.id ? savedPersona : persona))
+        : [savedPersona, ...personas];
+      setPersonas(updatedPersonas);
+      setEditingPersona(null);
+      setIsPersonaFormOpen(false);
+      setPersonaError('');
+      if (!activePersonaId) {
+        await handleSetActivePersona(savedPersona.id);
+      }
+    } catch (error) {
+      setPersonaError(error instanceof Error ? error.message : 'Unable to save patient profile');
     }
   };
 
   const handleDeletePersona = async (id: string) => {
-    await personaService.delete(id);
-    const updatedPersonas = personas.filter((persona) => persona.id !== id);
-    setPersonas(updatedPersonas);
-    if (activePersonaId === id) {
-      const nextActiveId = updatedPersonas[0]?.id || null;
-      setActivePersonaId(nextActiveId);
-      if (nextActiveId) await personaService.setActive(nextActiveId);
+    try {
+      await personaService.delete(id);
+      const updatedPersonas = personas.filter((persona) => persona.id !== id);
+      setPersonas(updatedPersonas);
+      setPersonaError('');
+      if (activePersonaId === id) {
+        const nextActiveId = updatedPersonas[0]?.id || null;
+        setActivePersonaId(nextActiveId);
+        if (nextActiveId) await personaService.setActive(nextActiveId);
+      }
+    } catch (error) {
+      setPersonaError(error instanceof Error ? error.message : 'Unable to delete patient profile');
     }
   };
 
@@ -250,9 +293,21 @@ const App: React.FC = () => {
     'ควรเพิ่มการดื่มน้ำอีกประมาณ 200-300 มล. ในช่วงบ่าย'
   ];
 
+  if (isAuthLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-500">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return <LoginScreen onAuthenticated={setAuthUser} />;
+  }
+
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto bg-slate-50 shadow-2xl overflow-hidden relative">
-      <Header />
+      <Header user={authUser} onLogout={handleLogout} />
 
       <main className="flex-1 overflow-hidden flex flex-col relative">
         {activeTab === 'chat' && (
@@ -319,6 +374,12 @@ const App: React.FC = () => {
                   setIsPersonaFormOpen(false);
                 }}
               />
+            )}
+
+            {personaError && (
+              <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                {personaError}
+              </div>
             )}
 
             <PersonaList
@@ -470,7 +531,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'admin' && <AdminDashboard />}
+        {activeTab === 'admin' && authUser.role === 'ADMIN' && <AdminDashboard />}
       </main>
 
       {/* Input Section - Only for Chat */}
@@ -565,15 +626,17 @@ const App: React.FC = () => {
           </svg>
           <span className="text-[10px] font-bold">สุขภาพ</span>
         </button>
-        <button
-          onClick={() => setActiveTab('admin')}
-          className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'admin' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
-        >
-          <svg className="w-6 h-6" fill={activeTab === 'admin' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 6h14M5 18h14" />
-          </svg>
-          <span className="text-[10px] font-bold">แอดมิน</span>
-        </button>
+        {authUser.role === 'ADMIN' && (
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'admin' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
+          >
+            <svg className="w-6 h-6" fill={activeTab === 'admin' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 6h14M5 18h14" />
+            </svg>
+            <span className="text-[10px] font-bold">แอดมิน</span>
+          </button>
+        )}
       </nav>
     </div>
   );

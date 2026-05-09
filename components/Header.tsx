@@ -1,7 +1,13 @@
 
 import React from 'react';
+import { AuthUser } from '../types';
 
-const Header: React.FC = () => {
+interface Props {
+  user: AuthUser;
+  onLogout: () => void;
+}
+
+const Header: React.FC<Props> = ({ user, onLogout }) => {
   return (
     <header className="bg-white border-b border-emerald-100 py-4 px-6 sticky top-0 z-50 flex items-center justify-between">
       <div className="flex items-center space-x-3">
@@ -15,9 +21,13 @@ const Header: React.FC = () => {
           <p className="text-xs text-emerald-600 font-medium">ผู้ช่วยเภสัชกรอัจฉริยะส่วนตัวของคุณ</p>
         </div>
       </div>
-      <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-        <span className="text-xs font-semibold text-emerald-700">Online</span>
+      <div className="flex items-center space-x-2">
+        <div className="hidden rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 sm:block">
+          <span className="text-xs font-semibold text-emerald-700">{user.role === 'ADMIN' ? 'Admin' : user.name || user.email}</span>
+        </div>
+        <button onClick={onLogout} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
+          Logout
+        </button>
       </div>
     </header>
   );

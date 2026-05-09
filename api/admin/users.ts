@@ -1,7 +1,9 @@
 import { prisma } from '../../lib/prisma';
+import { requireAdmin, sendAuthError } from '../../lib/auth';
 
 type VercelRequest = {
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
 };
 
 type VercelResponse = {
@@ -11,6 +13,13 @@ type VercelResponse = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    await requireAdmin(req, res);
+  } catch (error) {
+    sendAuthError(error, res);
+    return;
+  }
+
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     res.status(405).json({ error: 'Method Not Allowed' });
