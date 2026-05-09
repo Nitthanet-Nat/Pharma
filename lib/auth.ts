@@ -13,6 +13,7 @@ const SESSION_COOKIE = 'rsu_pharma_session';
 const DAY_SECONDS = 24 * 60 * 60;
 
 const getAuthSecret = () => process.env.AUTH_SECRET || process.env.ADMIN_PASSWORD || 'dev-only-change-me';
+const shouldUseSecureCookie = () => process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
 
 const base64Url = (value: string | Buffer) =>
   Buffer.from(value).toString('base64url');
@@ -50,11 +51,14 @@ export const createSessionCookie = (user: { id: string; role: string }) => {
       exp: Math.floor(Date.now() / 1000) + DAY_SECONDS * 7,
     })
   );
-  return `${SESSION_COOKIE}=${payload}.${sign(payload)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${DAY_SECONDS * 7}`;
+  const secure = shouldUseSecureCookie() ? '; Secure' : '';
+  return `${SESSION_COOKIE}=${payload}.${sign(payload)}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${DAY_SECONDS * 7}`;
 };
 
-export const clearSessionCookie = () =>
-  `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
+export const clearSessionCookie = () => {
+  const secure = shouldUseSecureCookie() ? '; Secure' : '';
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=0`;
+};
 
 const getCookie = (req: RequestLike, name: string) => {
   const rawCookie = req.headers?.cookie;
