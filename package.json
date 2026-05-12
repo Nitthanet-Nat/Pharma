@@ -6,14 +6,13 @@
   "scripts": {
     "dev": "vite",
     "dev:full": "node local-server.mjs",
-    "build": "prisma generate && vite build",
+    "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "prisma generate",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma db push",
-    "db:reset-local": "prisma db push --accept-data-loss && prisma db seed",
-    "db:status": "prisma migrate status",
-    "db:seed": "prisma db seed"
+    "db:generate": "node -e \"console.log('Skipping Prisma generate for demo build')\"",
+    "db:migrate": "node -e \"console.log('Skipping database migration for demo build')\"",
+    "db:reset-local": "node -e \"console.log('Skipping database reset for demo build')\"",
+    "db:status": "node -e \"console.log('No database is used in demo build')\"",
+    "db:seed": "node -e \"console.log('Skipping database seed for demo build')\""
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",

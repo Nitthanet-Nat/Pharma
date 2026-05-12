@@ -3,17 +3,7 @@ import { createServer as createViteServer } from 'vite';
 const port = Number(process.env.PORT || 3000);
 
 const apiRoutes = [
-  { method: 'POST', pattern: /^\/api\/auth\/login$/, file: '/api/auth/login.ts' },
-  { method: 'POST', pattern: /^\/api\/auth\/register$/, file: '/api/auth/register.ts' },
-  { method: 'GET', pattern: /^\/api\/auth\/me$/, file: '/api/auth/me.ts' },
-  { method: 'POST', pattern: /^\/api\/auth\/logout$/, file: '/api/auth/logout.ts' },
   { method: 'POST', pattern: /^\/api\/dify\/chat$/, file: '/api/dify/chat.ts' },
-  { method: 'GET|POST', pattern: /^\/api\/personas$/, file: '/api/personas/index.ts' },
-  { method: 'GET|POST', pattern: /^\/api\/personas\/active$/, file: '/api/personas/active.ts' },
-  { method: 'GET|PUT|DELETE', pattern: /^\/api\/personas\/([^/]+)$/, file: '/api/personas/[id].ts', param: 'id' },
-  { method: 'GET', pattern: /^\/api\/admin\/users$/, file: '/api/admin/users.ts' },
-  { method: 'GET|POST', pattern: /^\/api\/admin\/personas$/, file: '/api/admin/personas/index.ts' },
-  { method: 'GET|PUT|DELETE', pattern: /^\/api\/admin\/personas\/([^/]+)$/, file: '/api/admin/personas/[id].ts', param: 'id' },
 ];
 
 const readBody = async (req) =>
