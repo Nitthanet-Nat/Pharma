@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const body = parseBody(req.body);
     const email = getString(body.email).toLowerCase();
+    const username = getString(body.username).toLowerCase();
     const name = getString(body.name);
     const password = getString(body.password);
 
@@ -49,20 +50,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { prisma } = await import('../../lib/prisma');
-    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          username ? { username } : undefined,
+        ].filter(Boolean) as Array<{ email?: string; username?: string }>,
+      },
+      select: { id: true },
+    });
     if (existing) {
-      res.status(409).json({ error: 'This email is already registered' });
+      res.status(409).json({ error: 'This email or username is already registered' });
       return;
     }
 
     const user = await prisma.user.create({
       data: {
         email,
+        username: username || email.split('@')[0],
         name: name || email.split('@')[0],
         role: 'USER',
         passwordHash: hashPassword(password),
       },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, username: true, email: true, name: true, role: true },
     });
 
     res.setHeader('Set-Cookie', createSessionCookie(user));

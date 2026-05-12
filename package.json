@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "node local-server.mjs",
     "build": "prisma generate && vite build",
     "preview": "vite preview",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "prisma db push",
+    "db:reset-local": "prisma db push --accept-data-loss && prisma db seed",
     "db:status": "prisma migrate status",
     "db:seed": "prisma db seed"
   },

@@ -24,6 +24,7 @@ export interface HealthMetrics {
 
 export interface AuthUser {
   id: string;
+  username?: string | null;
   email?: string | null;
   name?: string | null;
   role: 'USER' | 'ADMIN' | string;

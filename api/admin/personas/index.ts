@@ -17,7 +17,7 @@ const includeHealthContext = {
   allergies: true,
   chronicDiseases: true,
   currentMedications: true,
-  user: { select: { id: true, email: true, name: true, activePatientPersonaId: true } },
+  user: { select: { id: true, username: true, email: true, name: true, activePatientPersonaId: true } },
 } as const;
 
 const getString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');

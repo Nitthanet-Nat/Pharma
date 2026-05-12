@@ -6,17 +6,22 @@ import PersonaList from './components/PersonaList';
 import PersonaForm from './components/PersonaForm';
 import ActivePersonaSelector from './components/ActivePersonaSelector';
 import PersonaHealthSummary from './components/PersonaHealthSummary';
-import AdminDashboard from './components/AdminDashboard';
-import LoginScreen from './components/LoginScreen';
 import { AuthUser, Message, Medication, PatientPersona, PatientPersonaFormData } from './types';
 import { getDifyChatResponse } from './services/difyService';
 import { personaService } from './services/personaService';
 import { buildChatQueryWithPersona } from './services/personaContext';
-import { authService } from './services/authService';
 
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
+
+const GUEST_USER: AuthUser = {
+  id: 'web-client-user',
+  username: 'guest',
+  email: null,
+  name: 'Guest',
+  role: 'USER',
+};
 
 const normalizeMarkdownContent = (content: string) =>
   content
@@ -75,9 +80,8 @@ const App: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'personas' | 'meds' | 'stats' | 'admin'>('chat');
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'chat' | 'personas' | 'meds' | 'stats'>('chat');
+  const [authUser] = useState<AuthUser>(GUEST_USER);
   const [personas, setPersonas] = useState<PatientPersona[]>([]);
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
   const [isPersonaFormOpen, setIsPersonaFormOpen] = useState(false);
@@ -94,23 +98,6 @@ const App: React.FC = () => {
   }, [messages, isTyping]);
 
   useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const user = await authService.me();
-        setAuthUser(user);
-      } catch {
-        setAuthUser(null);
-      } finally {
-        setIsAuthLoading(false);
-      }
-    };
-
-    loadSession();
-  }, []);
-
-  useEffect(() => {
-    if (!authUser) return;
-
     const loadPersonas = async () => {
       try {
         const [loadedPersonas, loadedActiveId] = await Promise.all([
@@ -126,15 +113,7 @@ const App: React.FC = () => {
     };
 
     loadPersonas();
-  }, [authUser]);
-
-  const handleLogout = async () => {
-    await authService.logout();
-    setAuthUser(null);
-    setPersonas([]);
-    setActivePersonaId(null);
-    setActiveTab('chat');
-  };
+  }, []);
 
   const activePersona = personas.find((persona) => persona.id === activePersonaId) || personas[0] || null;
 
@@ -295,21 +274,9 @@ const App: React.FC = () => {
     'ควรเพิ่มการดื่มน้ำอีกประมาณ 200-300 มล. ในช่วงบ่าย'
   ];
 
-  if (isAuthLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-500">
-        Loading...
-      </div>
-    );
-  }
-
-  if (!authUser) {
-    return <LoginScreen onAuthenticated={setAuthUser} />;
-  }
-
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto bg-slate-50 shadow-2xl overflow-hidden relative">
-      <Header user={authUser} onLogout={handleLogout} />
+      <Header user={authUser} />
 
       <main className="flex-1 overflow-hidden flex flex-col relative">
         {activeTab === 'chat' && (
@@ -533,7 +500,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'admin' && authUser.role === 'ADMIN' && <AdminDashboard />}
       </main>
 
       {/* Input Section - Only for Chat */}
@@ -591,54 +557,32 @@ const App: React.FC = () => {
       )}
 
       {/* Navigation Footer */}
-      <nav className="bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center safe-area-inset-bottom">
-        <button
-          onClick={() => setActiveTab('chat')}
-          className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'chat' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
-        >
-          <svg className="w-6 h-6" fill={activeTab === 'chat' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-          <span className="text-[10px] font-bold">ปรึกษา AI</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('personas')}
-          className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'personas' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
-        >
-          <svg className="w-6 h-6" fill={activeTab === 'personas' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-6a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0" />
-          </svg>
-          <span className="text-[10px] font-bold">ผู้ป่วย</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('meds')}
-          className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'meds' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
-        >
-          <svg className="w-6 h-6" fill={activeTab === 'meds' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-          </svg>
-          <span className="text-[10px] font-bold">ตารางยา</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('stats')}
-          className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'stats' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
-        >
-          <svg className="w-6 h-6" fill={activeTab === 'stats' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span className="text-[10px] font-bold">สุขภาพ</span>
-        </button>
-        {authUser.role === 'ADMIN' && (
+      <nav className="bg-white border-t border-slate-100 px-4 py-4 flex justify-between items-center safe-area-inset-bottom">
+        {[
+          ['chat', 'ปรึกษา'],
+          ['personas', 'ผู้ป่วย'],
+          ['meds', 'ยา'],
+          ['stats', 'สุขภาพ'],
+        ].map(([tab, label]) => (
           <button
-            onClick={() => setActiveTab('admin')}
-            className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'admin' ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
+            key={tab}
+            onClick={() => setActiveTab(tab as typeof activeTab)}
+            className={`flex min-w-0 flex-col items-center space-y-1 transition-all ${activeTab === tab ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}
           >
-            <svg className="w-6 h-6" fill={activeTab === 'admin' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 6h14M5 18h14" />
+            <svg className="w-6 h-6" fill={activeTab === tab ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={
+                tab === 'chat'
+                  ? 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'
+                  : tab === 'personas'
+                    ? 'M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m6-6a4 4 0 11-8 0 4 4 0 018 0zm6 2a3 3 0 11-6 0'
+                    : tab === 'meds'
+                      ? 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z'
+                      : 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+              } />
             </svg>
-            <span className="text-[10px] font-bold">แอดมิน</span>
+            <span className="truncate text-[10px] font-bold">{label}</span>
           </button>
-        )}
+        ))}
       </nav>
     </div>
   );

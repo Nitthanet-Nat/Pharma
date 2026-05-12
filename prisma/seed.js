@@ -1,18 +1,36 @@
+import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function main() {
-  const user = await prisma.user.upsert({
-    where: { email: "demo@rsu-pharma.local" },
-    update: {},
+const hashPassword = (password) => {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.pbkdf2Sync(password, salt, 120000, 32, "sha256").toString("hex");
+  return `pbkdf2_sha256$120000$${salt}$${hash}`;
+};
+
+const upsertTestUser = async ({ username, email, name, role, password }) =>
+  prisma.user.upsert({
+    where: { email },
+    update: {
+      username,
+      name,
+      role,
+      passwordHash: hashPassword(password),
+    },
     create: {
-      email: "demo@rsu-pharma.local",
-      name: "RSU Pharma Demo User",
+      username,
+      email,
+      name,
+      role,
+      passwordHash: hashPassword(password),
     },
   });
 
-  const myself = await prisma.patientPersona.create({
+async function recreatePersonas(user) {
+  await prisma.patientPersona.deleteMany({ where: { userId: user.id } });
+
+  const self = await prisma.patientPersona.create({
     data: {
       userId: user.id,
       displayName: "สมศรี ใจดี",
@@ -24,7 +42,8 @@ async function main() {
       pregnancyStatus: "not_pregnant",
       breastfeedingStatus: "not_breastfeeding",
       preferredLanguage: "th",
-      medicationHistory: "เคยใช้พาราเซตามอลได้ ไม่มีผลข้างเคียงสำคัญ",
+      medicationHistory: "ใช้พาราเซตามอลได้ ไม่มีประวัติแพ้ยาสำคัญ",
+      emergencyContact: "081-000-0000",
       notes: "ติดตามความดันเป็นระยะ",
       allergies: {
         create: [{ substance: "Penicillin", reaction: "ผื่นคัน", severity: "moderate" }],
@@ -66,11 +85,40 @@ async function main() {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { activePatientPersonaId: myself.id },
+    data: { activePatientPersonaId: self.id },
   });
 }
 
+async function main() {
+  const admin = await upsertTestUser({
+    username: "admin",
+    email: "admin@gmail.com",
+    name: "Local Admin",
+    role: "ADMIN",
+    password: "admin1234",
+  });
+
+  const user = await upsertTestUser({
+    username: "user",
+    email: "user@gmail.com",
+    name: "Local User",
+    role: "USER",
+    password: "user1234",
+  });
+
+  await recreatePersonas(user);
+
+  console.log("Seeded local accounts:");
+  console.log("ADMIN username: admin | email: admin@gmail.com | password: admin1234");
+  console.log("USER  username: user  | email: user@gmail.com  | password: user1234");
+  console.log(`Admin id: ${admin.id}`);
+}
+
 main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
   .finally(async () => {
     await prisma.$disconnect();
   });

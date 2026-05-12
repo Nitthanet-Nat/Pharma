@@ -2,8 +2,10 @@ import { PatientPersona, PatientPersonaFormData } from '../types';
 
 export interface AdminUser {
   id: string;
+  username?: string | null;
   email?: string | null;
   name?: string | null;
+  role?: string | null;
   activePatientPersonaId?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -13,6 +15,7 @@ export interface AdminUser {
 export interface AdminPersona extends PatientPersona {
   user?: {
     id: string;
+    username?: string | null;
     email?: string | null;
     name?: string | null;
     activePatientPersonaId?: string | null;

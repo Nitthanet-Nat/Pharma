@@ -15,8 +15,9 @@ const parseBody = (body: VercelRequest['body']) =>
   typeof body === 'string' ? (JSON.parse(body) as Record<string, unknown>) : body || {};
 const getString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
-const publicUser = (user: { id: string; email: string | null; name: string | null; role: string }) => ({
+const publicUser = (user: { id: string; username?: string | null; email: string | null; name: string | null; role: string }) => ({
   id: user.id,
+  username: user.username,
   email: user.email,
   name: user.name,
   role: user.role,
@@ -41,33 +42,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const body = parseBody(req.body);
-    const email = getString(body.email).toLowerCase();
+    const identifier = (getString(body.identifier) || getString(body.username) || getString(body.email)).toLowerCase();
     const password = getString(body.password);
 
-    if (!email || !password) {
-      res.status(400).json({ error: 'Email and password are required' });
+    if (!identifier || !password) {
+      res.status(400).json({ error: 'Username/email and password are required' });
       return;
     }
 
+    const email = identifier.includes('@') ? identifier : '';
+    const username = identifier.includes('@') ? '' : identifier;
     const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || '';
     const { prisma } = await import('../../lib/prisma');
 
-    if (adminEmail && adminPassword && email === adminEmail && password === adminPassword) {
+    if (adminPassword && password === adminPassword && (identifier === adminEmail || identifier === adminUsername)) {
       const admin = await prisma.user.upsert({
-        where: { email },
-        update: { name: 'Admin', role: 'ADMIN', passwordHash: hashPassword(password) },
-        create: { email, name: 'Admin', role: 'ADMIN', passwordHash: hashPassword(password) },
-        select: { id: true, email: true, name: true, role: true },
+        where: { email: adminEmail || 'admin@gmail.com' },
+        update: { username: adminUsername, name: 'Admin', role: 'ADMIN', passwordHash: hashPassword(password) },
+        create: {
+          username: adminUsername,
+          email: adminEmail || 'admin@gmail.com',
+          name: 'Admin',
+          role: 'ADMIN',
+          passwordHash: hashPassword(password),
+        },
+        select: { id: true, username: true, email: true, name: true, role: true },
       });
       res.setHeader('Set-Cookie', createSessionCookie(admin));
       res.status(200).json({ user: publicUser(admin) });
       return;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true, email: true, name: true, role: true, passwordHash: true },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          email ? { email } : undefined,
+          username ? { username } : undefined,
+        ].filter(Boolean) as Array<{ email?: string; username?: string }>,
+      },
+      select: { id: true, username: true, email: true, name: true, role: true, passwordHash: true },
     });
 
     if (!user || !verifyPassword(password, user.passwordHash)) {

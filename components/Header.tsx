@@ -4,7 +4,7 @@ import { AuthUser } from '../types';
 
 interface Props {
   user: AuthUser;
-  onLogout: () => void;
+  onLogout?: () => void;
 }
 
 const Header: React.FC<Props> = ({ user, onLogout }) => {
@@ -23,11 +23,13 @@ const Header: React.FC<Props> = ({ user, onLogout }) => {
       </div>
       <div className="flex items-center space-x-2">
         <div className="hidden rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 sm:block">
-          <span className="text-xs font-semibold text-emerald-700">{user.role === 'ADMIN' ? 'Admin' : user.name || user.email}</span>
+          <span className="text-xs font-semibold text-emerald-700">{user.role === 'ADMIN' ? 'Admin' : user.name || user.username || user.email}</span>
         </div>
-        <button onClick={onLogout} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-          Logout
-        </button>
+        {onLogout && (
+          <button onClick={onLogout} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
+            Logout
+          </button>
+        )}
       </div>
     </header>
   );

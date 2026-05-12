@@ -28,18 +28,18 @@ export const authService = {
     return result.user;
   },
 
-  async login(email: string, password: string) {
+  async login(identifier: string, password: string) {
     const result = await requestJson<{ user: AuthUser }>('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, email: identifier, username: identifier, password }),
     });
     return result.user;
   },
 
-  async register(name: string, email: string, password: string) {
+  async register(name: string, email: string, password: string, username?: string) {
     const result = await requestJson<{ user: AuthUser }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, username }),
     });
     return result.user;
   },

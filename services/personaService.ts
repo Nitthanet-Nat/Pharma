@@ -77,6 +77,20 @@ const writeLocalPersonas = (personas: PatientPersona[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(personas));
 };
 
+const updateLocalPersona = (id: string, data: PatientPersonaFormData) => {
+  const personas = readLocalPersonas();
+  const existing = personas.find((persona) => persona.id === id);
+  if (!existing) throw new Error('Patient persona not found');
+
+  const updated: PatientPersona = {
+    ...existing,
+    ...normalizeFormData(data),
+    updatedAt: new Date().toISOString(),
+  };
+  writeLocalPersonas(personas.map((persona) => (persona.id === id ? updated : persona)));
+  return updated;
+};
+
 const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(url, {
     ...init,
@@ -93,44 +107,89 @@ const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
 
 export const personaService = {
   async getAll(): Promise<PatientPersona[]> {
-    return requestJson<PatientPersona[]>(`/api/personas?userId=${encodeURIComponent(USER_ID)}`);
+    try {
+      return await requestJson<PatientPersona[]>(`/api/personas?userId=${encodeURIComponent(USER_ID)}`);
+    } catch {
+      return readLocalPersonas();
+    }
   },
 
   async getById(id: string): Promise<PatientPersona | null> {
-    return requestJson<PatientPersona>(`/api/personas/${id}?userId=${encodeURIComponent(USER_ID)}`);
+    try {
+      return await requestJson<PatientPersona>(`/api/personas/${id}?userId=${encodeURIComponent(USER_ID)}`);
+    } catch {
+      return readLocalPersonas().find((persona) => persona.id === id) || null;
+    }
   },
 
   async create(data: PatientPersonaFormData): Promise<PatientPersona> {
     const normalized = normalizeFormData(data);
-    return requestJson<PatientPersona>('/api/personas', {
-      method: 'POST',
-      body: JSON.stringify({ ...normalized, userId: USER_ID }),
-    });
+    try {
+      return await requestJson<PatientPersona>('/api/personas', {
+        method: 'POST',
+        body: JSON.stringify({ ...normalized, userId: USER_ID }),
+      });
+    } catch {
+      const personas = readLocalPersonas();
+      const persona: PatientPersona = {
+        id: makeId(),
+        userId: USER_ID,
+        ...normalized,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      writeLocalPersonas([persona, ...personas]);
+      if (!localStorage.getItem(ACTIVE_KEY)) localStorage.setItem(ACTIVE_KEY, persona.id);
+      return persona;
+    }
   },
 
   async update(id: string, data: PatientPersonaFormData): Promise<PatientPersona> {
     const normalized = normalizeFormData(data);
-    return requestJson<PatientPersona>(`/api/personas/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ ...normalized, userId: USER_ID }),
-    });
+    try {
+      return await requestJson<PatientPersona>(`/api/personas/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...normalized, userId: USER_ID }),
+      });
+    } catch {
+      return updateLocalPersona(id, normalized);
+    }
   },
 
   async delete(id: string): Promise<void> {
-    await requestJson(`/api/personas/${id}`, { method: 'DELETE', body: JSON.stringify({ userId: USER_ID }) });
+    try {
+      await requestJson(`/api/personas/${id}`, { method: 'DELETE', body: JSON.stringify({ userId: USER_ID }) });
+    } catch {
+      const personas = readLocalPersonas().filter((persona) => persona.id !== id);
+      writeLocalPersonas(personas);
+      if (localStorage.getItem(ACTIVE_KEY) === id) {
+        const nextActiveId = personas[0]?.id;
+        if (nextActiveId) localStorage.setItem(ACTIVE_KEY, nextActiveId);
+        else localStorage.removeItem(ACTIVE_KEY);
+      }
+    }
   },
 
   async getActive(): Promise<string | null> {
-    const result = await requestJson<{ activePatientPersonaId: string | null }>(
-      `/api/personas/active?userId=${encodeURIComponent(USER_ID)}`
-    );
-    return result.activePatientPersonaId;
+    try {
+      const result = await requestJson<{ activePatientPersonaId: string | null }>(
+        `/api/personas/active?userId=${encodeURIComponent(USER_ID)}`
+      );
+      return result.activePatientPersonaId;
+    } catch {
+      return localStorage.getItem(ACTIVE_KEY) || readLocalPersonas()[0]?.id || null;
+    }
   },
 
   async setActive(id: string): Promise<void> {
-    await requestJson('/api/personas/active', {
-      method: 'POST',
-      body: JSON.stringify({ userId: USER_ID, patientPersonaId: id }),
-    });
+    localStorage.setItem(ACTIVE_KEY, id);
+    try {
+      await requestJson('/api/personas/active', {
+        method: 'POST',
+        body: JSON.stringify({ userId: USER_ID, patientPersonaId: id }),
+      });
+    } catch {
+      // The app can run without the persona API when login is disabled.
+    }
   },
 };

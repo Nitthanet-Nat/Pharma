@@ -27,7 +27,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const users = await prisma.user.findMany({
-    include: {
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      name: true,
+      role: true,
+      activePatientPersonaId: true,
+      createdAt: true,
+      updatedAt: true,
       patientPersonas: {
         include: {
           allergies: true,

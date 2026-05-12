@@ -9,6 +9,7 @@ interface Props {
 const LoginScreen: React.FC<Props> = ({ onAuthenticated }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,8 +22,8 @@ const LoginScreen: React.FC<Props> = ({ onAuthenticated }) => {
     try {
       const user =
         mode === 'login'
-          ? await authService.login(email, password)
-          : await authService.register(name, email, password);
+          ? await authService.login(username || email, password)
+          : await authService.register(name, email, password, username);
       onAuthenticated(user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to authenticate');
@@ -43,7 +44,7 @@ const LoginScreen: React.FC<Props> = ({ onAuthenticated }) => {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">RSU Pharma</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-900">เข้าสู่ระบบ</h1>
           <p className="mt-2 text-sm text-slate-600">
-            ผู้ใช้ทั่วไปจะเข้าสู่หน้าปรึกษา AI และข้อมูลส่วนตัว ส่วนแอดมินจะเห็นหลังบ้านสำหรับดูแลข้อมูลผู้ใช้ทั้งหมด
+            ผู้ใช้ทั่วไปจะเข้าสู่หน้าปรึกษา AI และข้อมูลสุขภาพของตัวเอง ส่วนแอดมินจะเห็นเมนูหลังบ้านสำหรับจัดการข้อมูลทั้งหมด
           </p>
         </div>
 
@@ -66,25 +67,36 @@ const LoginScreen: React.FC<Props> = ({ onAuthenticated }) => {
           </div>
 
           {mode === 'register' && (
-            <label className="block text-sm font-semibold text-slate-700">
-              ชื่อ
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-emerald-300"
-                placeholder="ชื่อผู้ใช้"
-              />
-            </label>
+            <>
+              <label className="block text-sm font-semibold text-slate-700">
+                ชื่อ
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-emerald-300"
+                  placeholder="ชื่อผู้ใช้"
+                />
+              </label>
+              <label className="block text-sm font-semibold text-slate-700">
+                Username
+                <input
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-emerald-300"
+                  placeholder="เช่น user"
+                />
+              </label>
+            </>
           )}
 
           <label className="block text-sm font-semibold text-slate-700">
-            Email
+            {mode === 'login' ? 'Username หรือ Email' : 'Email'}
             <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              type={mode === 'login' ? 'text' : 'email'}
+              value={mode === 'login' ? username : email}
+              onChange={(event) => (mode === 'login' ? setUsername(event.target.value) : setEmail(event.target.value))}
               className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-emerald-300"
-              placeholder="you@example.com"
+              placeholder={mode === 'login' ? 'admin, user หรือ user@gmail.com' : 'you@example.com'}
             />
           </label>
 
@@ -108,6 +120,12 @@ const LoginScreen: React.FC<Props> = ({ onAuthenticated }) => {
           >
             {isSubmitting ? 'กำลังตรวจสอบ...' : mode === 'login' ? 'เข้าสู่ระบบ' : 'สร้างบัญชี'}
           </button>
+
+          <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-500">
+            <p className="font-semibold text-slate-700">บัญชีทดสอบ local</p>
+            <p>Admin: admin / admin1234</p>
+            <p>User: user / user1234</p>
+          </div>
         </form>
       </div>
     </div>
