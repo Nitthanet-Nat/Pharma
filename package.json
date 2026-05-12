@@ -8,14 +8,13 @@
     "dev:full": "node local-server.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "db:generate": "node -e \"console.log('Skipping Prisma generate for demo build')\"",
-    "db:migrate": "node -e \"console.log('Skipping database migration for demo build')\"",
-    "db:reset-local": "node -e \"console.log('Skipping database reset for demo build')\"",
+    "db:generate": "node -e \"console.log('No database is used in demo build')\"",
+    "db:migrate": "node -e \"console.log('No database is used in demo build')\"",
+    "db:reset-local": "node -e \"console.log('No database is used in demo build')\"",
     "db:status": "node -e \"console.log('No database is used in demo build')\"",
-    "db:seed": "node -e \"console.log('Skipping database seed for demo build')\""
+    "db:seed": "node -e \"console.log('No database is used in demo build')\""
   },
   "dependencies": {
-    "@prisma/client": "^6.7.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-markdown": "^10.1.0",
@@ -29,12 +28,8 @@
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
-    "prisma": "^6.7.0",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
   }
 }
