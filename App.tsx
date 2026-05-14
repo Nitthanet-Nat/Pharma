@@ -15,6 +15,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 
+const SHOW_PERSONA_HEALTH_SUMMARY = false;
+
 const GUEST_USER: AuthUser = {
   id: 'web-client-user',
   username: 'guest',
@@ -40,7 +42,10 @@ const sanitizeAssistantContent = (content: string) => {
     /^\s*(?:RSU\s*Pharma|PharmaAI)\s*(?:ขอ)?(?:ให้คำแนะนำ|ขอให้คำแนะนำ)(?:ว่า)?\s*/iu
   ];
 
-  let sanitized = content.trim();
+  let sanitized = content
+    .replace(/^\s*Medical safety rules for RSU Pharma:[\s\S]*?\nUser question:\s*/i, '')
+    .replace(/^\s*Patient Profile:[\s\S]*?\nUser question:\s*/i, '')
+    .trim();
   let previous = '';
 
   while (sanitized && sanitized !== previous) {
@@ -286,7 +291,7 @@ const App: React.FC = () => {
               activePersonaId={activePersonaId}
               onChange={handleSetActivePersona}
             />
-            <PersonaHealthSummary persona={activePersona} />
+            {SHOW_PERSONA_HEALTH_SUMMARY && <PersonaHealthSummary persona={activePersona} />}
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.role === 'user'

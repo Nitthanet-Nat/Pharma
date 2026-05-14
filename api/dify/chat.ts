@@ -16,16 +16,11 @@ type VercelResponse = {
   setHeader: (name: string, value: string) => void;
 };
 
-const demoAnswer = (query: string) =>
+const demoAnswer = () =>
   [
-    `รับทราบคำถาม: "${query || 'ทดลองแชท'}"`,
+    'ขออภัยค่ะ ตอนนี้ยังเชื่อมต่อบริการตอบคำถามไม่ได้',
     '',
-    'ตอนนี้ระบบอยู่ในโหมดทดลองใช้งาน โดยไม่ใช้ระบบ login และไม่บันทึกข้อมูลลงฐานข้อมูล',
-    '',
-    'คำแนะนำเบื้องต้น:',
-    '- ระบุอาการหลัก อายุ น้ำหนัก โรคประจำตัว ยาที่ใช้อยู่ และประวัติแพ้ยา',
-    '- หากมีอาการรุนแรง เช่น หายใจลำบาก เจ็บหน้าอก หน้ามืดมาก หรือแพ้ยารุนแรง ควรไปพบแพทย์ทันที',
-    '- ข้อมูลนี้ใช้สำหรับทดลองระบบเท่านั้น ไม่แทนการวินิจฉัยหรือคำสั่งแพทย์',
+    'กรุณาลองใหม่อีกครั้ง หรือปรึกษาเภสัชกร/แพทย์หากมีอาการรุนแรงหรือเร่งด่วน',
   ].join('\n');
 
 const parseBody = (body: VercelRequest['body']): ChatRequestBody => {
@@ -68,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       rawBody = parseBody(req.body);
     } catch {
-      res.status(200).json({ answer: demoAnswer(''), mode: 'demo', error: 'Invalid JSON body' });
+      res.status(200).json({ answer: demoAnswer(), mode: 'demo', error: 'Invalid JSON body' });
       return;
     }
 
@@ -81,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!apiKey) {
       res.status(200).json({
-        answer: demoAnswer(query),
+        answer: demoAnswer(),
         mode: 'demo',
         warning: 'Missing DIFY_API_KEY on server',
       });
@@ -110,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       res.status(200).json({
-        answer: demoAnswer(query),
+        answer: demoAnswer(),
         mode: 'demo',
         warning: 'Dify API call failed',
         status: response.status,
@@ -123,13 +118,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({
       ...(typeof data === 'object' && data ? data : {}),
-      answer: answer || demoAnswer(query),
+      answer: answer || demoAnswer(),
       outputs,
       mode: answer ? 'workflow' : 'demo',
     });
   } catch (error) {
     res.status(200).json({
-      answer: demoAnswer(''),
+      answer: demoAnswer(),
       mode: 'demo',
       warning: 'Dify proxy recovered from an error',
       details: error instanceof Error ? error.message : 'Unknown error',

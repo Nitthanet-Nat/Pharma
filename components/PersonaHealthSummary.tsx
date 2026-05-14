@@ -6,6 +6,8 @@ interface Props {
   persona?: PatientPersona | null;
 }
 
+const SHOW_AI_CONTEXT_DETAILS = false;
+
 const PersonaHealthSummary: React.FC<Props> = ({ persona }) => {
   if (!persona) {
     return (
@@ -54,10 +56,12 @@ const PersonaHealthSummary: React.FC<Props> = ({ persona }) => {
         </div>
       </div>
 
-      <details className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
-        <summary className="cursor-pointer font-bold text-slate-700">ดูข้อความบริบทที่จะส่งให้ AI</summary>
-        <pre className="mt-3 whitespace-pre-wrap font-sans leading-relaxed">{formatPersonaContext(persona)}</pre>
-      </details>
+      {SHOW_AI_CONTEXT_DETAILS && (
+        <details className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
+          <summary className="cursor-pointer font-bold text-slate-700">ดูข้อความบริบทที่จะส่งให้ AI</summary>
+          <pre className="mt-3 whitespace-pre-wrap font-sans leading-relaxed">{formatPersonaContext(persona)}</pre>
+        </details>
+      )}
     </section>
   );
 };

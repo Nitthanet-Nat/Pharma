@@ -1,4 +1,3 @@
-
 /// <reference types="vite/client" />
 
 const DIFY_CHAT_ENDPOINT = "/api/dify/chat";
@@ -19,22 +18,17 @@ export interface DifyResponse {
     answer: string;
 }
 
-const getDemoResponse = (query: string): DifyResponse => ({
+const getDemoResponse = (): DifyResponse => ({
     answer: [
-        `รับทราบคำถาม: "${query}"`,
+        "ขออภัยค่ะ ตอนนี้ยังเชื่อมต่อบริการตอบคำถามไม่ได้",
         "",
-        "ตอนนี้แอปอยู่ในโหมดทดลองแชทแบบไม่ใช้ระบบ login และไม่บันทึกฐานข้อมูลจริง",
-        "",
-        "คำแนะนำเบื้องต้น:",
-        "- ระบุอาการหลัก อายุ น้ำหนัก โรคประจำตัว ยาที่ใช้อยู่ และประวัติแพ้ยา",
-        "- หากมีอาการรุนแรง เช่น หายใจลำบาก เจ็บหน้าอก หน้ามืดมาก หรือแพ้ยารุนแรง ควรไปพบแพทย์ทันที",
-        "- ข้อมูลนี้ใช้สำหรับทดลองระบบเท่านั้น ไม่แทนการวินิจฉัยหรือคำสั่งแพทย์",
+        "กรุณาลองใหม่อีกครั้ง หรือปรึกษาเภสัชกร/แพทย์หากมีอาการรุนแรงหรือเร่งด่วน",
     ].join("\n"),
 });
 
 export const getDifyChatResponse = async (query: string) => {
     if (!DIFY_CHAT_ENDPOINT) {
-        return getDemoResponse(query);
+        return getDemoResponse();
     }
 
     try {
@@ -68,6 +62,6 @@ export const getDifyChatResponse = async (query: string) => {
         return data;
     } catch (error) {
         console.error("Dify Service Error:", error);
-        return getDemoResponse(query);
+        return getDemoResponse();
     }
 };
